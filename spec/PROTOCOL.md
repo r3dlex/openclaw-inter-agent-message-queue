@@ -2,15 +2,15 @@
 
 ## Location
 
-All queues live under `~/.openclaw/workspace/queues/`.
+All agent inboxes live under `queue/` in this repository.
 
 ## Structure
 
 ```
-queues/
-  PROTOCOL.md          <- this file
+queue/
   broadcast/           <- messages for ALL agents
   main/                <- inbox for main
+  mq_agent/            <- inbox for mq_agent (this agent)
   mail_agent/          <- inbox for mail_agent
   librarian_agent/     <- inbox for librarian_agent
   journalist_agent/    <- inbox for journalist_agent
@@ -22,6 +22,8 @@ queues/
   agent_claude/        <- inbox for agent_claude
   archivist_agent/     <- inbox for archivist_agent
 ```
+
+New agents get a folder created during registration. The Elixir service (via the HTTP API) is the primary messaging channel; the file-based queue is a fallback and archive.
 
 ## Message Format
 
@@ -63,14 +65,14 @@ Example: `2026-03-20T21-30-00Z-mail_agent.json`
 
 ### Sending
 
-1. To send a direct message: write the JSON file to `queues/{recipient_agent_id}/`.
-2. To broadcast: write the JSON file to `queues/broadcast/`.
+1. To send a direct message: write the JSON file to `queue/{recipient_agent_id}/`.
+2. To broadcast: write the JSON file to `queue/broadcast/`.
 3. Use the filename format `{ISO-timestamp}-{your_agent_id}.json`. Replace colons with dashes in the timestamp.
 4. Never modify a message after writing it. To update status, the recipient renames or moves the file.
 
 ### Receiving
 
-1. On every session start, check your inbox (`queues/{your_agent_id}/`) and `queues/broadcast/`.
+1. On every session start, check your inbox (`queue/{your_agent_id}/`) and `queue/broadcast/`.
 2. Process messages in chronological order (sort by filename).
 3. After reading a message, update `status` to `read`.
 4. After acting on it, update `status` to `acted`.
@@ -78,7 +80,7 @@ Example: `2026-03-20T21-30-00Z-mail_agent.json`
 
 ### Cleanup
 
-1. Messages with `status: "acted"` older than 7 days can be deleted or moved to `queues/{agent}/archive/`.
+1. Messages with `status: "acted"` older than 7 days can be deleted or moved to `queue/{agent}/archive/`.
 2. Messages past `expiresAt` can be deleted without processing.
 3. Each agent is responsible for cleaning its own inbox.
 
@@ -86,7 +88,7 @@ Example: `2026-03-20T21-30-00Z-mail_agent.json`
 
 ### mail_agent asks librarian_agent to research a topic
 
-File: `queues/librarian_agent/2026-03-20T21-30-00Z-mail_agent.json`
+File: `queue/librarian_agent/2026-03-20T21-30-00Z-mail_agent.json`
 
 ```json
 {
@@ -106,7 +108,7 @@ File: `queues/librarian_agent/2026-03-20T21-30-00Z-mail_agent.json`
 
 ### librarian_agent replies
 
-File: `queues/mail_agent/2026-03-20T22-15-00Z-librarian_agent.json`
+File: `queue/mail_agent/2026-03-20T22-15-00Z-librarian_agent.json`
 
 ```json
 {
@@ -126,7 +128,7 @@ File: `queues/mail_agent/2026-03-20T22-15-00Z-librarian_agent.json`
 
 ### main broadcasts a system-wide notice
 
-File: `queues/broadcast/2026-03-20T06-00-00Z-main.json`
+File: `queue/broadcast/2026-03-20T06-00-00Z-main.json`
 
 ```json
 {

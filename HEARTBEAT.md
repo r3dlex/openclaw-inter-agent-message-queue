@@ -5,7 +5,7 @@ Tasks to run on each session start and periodically.
 ## On Session Start
 
 1. **Check service**: `curl -s http://127.0.0.1:18790/status`
-   - If down: restart the service (see `agent/TOOLS.md` for commands).
+   - If down: restart the service (see `TOOLS.md` for commands).
    - If up: review the status output.
 
 2. **Check agents**: Look for stale agents or zero agents online.

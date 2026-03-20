@@ -2,7 +2,7 @@
 
 This file is for **you** (Claude, Copilot, or any AI agent working on this codebase). It tells you what this project is, how it's structured, and how to work on it.
 
-> For the OpenClaw **mq_agent** that operates this service at runtime, see `agent/AGENTS.md`.
+> For the OpenClaw **mq_agent** that operates this service at runtime, see `AGENTS.md`.
 
 ## What This Is
 
@@ -25,17 +25,22 @@ make build && make up
 ## Repository Structure
 
 ```
+├── AGENTS.md              # OpenClaw agent entry point (mq_agent reads this)
+├── SOUL.md                # Agent identity and boundaries
+├── IDENTITY.md            # Agent metadata
+├── TOOLS.md               # Environment-specific notes
+├── HEARTBEAT.md           # Periodic tasks
+├── BOOT.md                # Startup instructions
 ├── openclaw_mq/           # Elixir/OTP service (the actual queue)
 │   ├── lib/openclaw_mq/   # Source code
 │   ├── config/            # Configuration (reads from env vars)
 │   └── test/              # Elixir tests
-├── agent/                 # OpenClaw agent workspace files (runtime)
-│   ├── AGENTS.md          # Agent entry point
-│   ├── SOUL.md            # Agent identity and boundaries
-│   ├── IDENTITY.md        # Agent metadata
-│   ├── TOOLS.md           # Environment-specific notes
-│   ├── HEARTBEAT.md       # Periodic tasks
-│   └── BOOT.md            # Startup instructions
+├── queue/                 # File-based agent inboxes
+│   ├── broadcast/         # Messages for all agents
+│   ├── main/              # Inbox for main
+│   ├── mail_agent/        # Inbox for mail_agent
+│   ├── librarian_agent/   # ...
+│   └── ...                # One folder per registered agent
 ├── spec/                  # Specifications and architecture docs
 │   ├── ARCHITECTURE.md    # System design and component overview
 │   ├── API.md             # Full HTTP + WebSocket API reference
@@ -57,7 +62,7 @@ make build && make up
 | Audience | Files | Purpose |
 |----------|-------|---------|
 | **Developers / AI agents** improving this repo | `CLAUDE.md`, `spec/`, `openclaw_mq/`, `tools/`, `.github/` | Build, test, deploy |
-| **The mq_agent** operating this service | `agent/` | Runtime identity, monitoring, operations |
+| **The mq_agent** operating this service | `AGENTS.md`, `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `HEARTBEAT.md`, `BOOT.md`, `queue/` | Runtime identity, monitoring, operations |
 
 ## Working on the Elixir Service
 

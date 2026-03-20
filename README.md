@@ -64,10 +64,13 @@ Full architecture: [spec/ARCHITECTURE.md](spec/ARCHITECTURE.md)
 
 ```
 openclaw_mq/     Elixir/OTP service (the queue)
-agent/           OpenClaw agent workspace (runtime identity and operations)
+queue/           File-based agent inboxes (one folder per agent + broadcast/)
 spec/            Specifications, API docs, architecture, ADRs
 tools/           Python pipeline runner (health, CI, deploy, monitor)
 .github/         GitHub Actions (CI + deploy)
+AGENTS.md        OpenClaw agent entry point (mq_agent reads this at runtime)
+SOUL.md          Agent identity and boundaries
+IDENTITY.md      Agent metadata
 ```
 
 ## Documentation
