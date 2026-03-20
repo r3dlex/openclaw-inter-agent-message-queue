@@ -1,10 +1,69 @@
-/_build
-/cover
-/deps
-/doc
-/.fetch
+# Elixir / Erlang
+_build/
+deps/
+cover/
+doc/
+.fetch
 erl_crash.dump
 *.ez
 *.beam
-/config/*.secret.exs
+*.secret.exs
 .elixir_ls/
+.mix/
+mix.lock.bak
+# Hex package manager
+/tmp/hex-*
+
+# Python (pipeline tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.eggs/
+
+# Environment & secrets — NEVER commit these
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
+
+# LaunchAgent plist (contains local paths — use .plist.example)
+*.plist
+!*.plist.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Logs
+logs/
+*.log
+
+# OpenClaw workspace runtime (agent-specific, not repo content)
+.openclaw/
+memory/
+USER.md
+BOOTSTRAP.md
+STATUS.json

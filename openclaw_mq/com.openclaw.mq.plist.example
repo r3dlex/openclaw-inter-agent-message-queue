@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Example LaunchAgent plist for OpenClaw MQ.
+  Copy to ~/Library/LaunchAgents/com.openclaw.mq.plist and adjust paths.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.openclaw.mq</string>
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Replace with your actual release path -->
+        <string>/path/to/openclaw_mq/_build/prod/rel/openclaw_mq/bin/openclaw_mq</string>
+        <string>start</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/openclaw/openclaw-mq.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/openclaw/openclaw-mq.err.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>MIX_ENV</key>
+        <string>prod</string>
+        <key>OPENCLAW_GATEWAY_TOKEN</key>
+        <string>your-gateway-token-here</string>
+    </dict>
+</dict>
+</plist>

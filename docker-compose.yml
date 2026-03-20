@@ -1,0 +1,15 @@
+services:
+  iamq:
+    build: .
+    container_name: openclaw-iamq
+    restart: unless-stopped
+    ports:
+      - "${IAMQ_HTTP_PORT:-18790}:18790"
+      - "${IAMQ_WS_PORT:-18791}:18791"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18790/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

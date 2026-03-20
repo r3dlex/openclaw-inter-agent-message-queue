@@ -1,0 +1,110 @@
+defmodule OpenclawMq.Api.Router do
+  @moduledoc """
+  HTTP API for agents to interact with the message queue.
+
+  Endpoints:
+    POST   /register          - Register an agent
+    POST   /heartbeat         - Agent heartbeat
+    POST   /send              - Send a message (direct or broadcast)
+    GET    /inbox/:agent_id   - Get inbox for an agent
+    PATCH  /messages/:id      - Update message status
+    GET    /status            - Queue health summary
+    GET    /agents            - List registered agents
+  """
+  use Plug.Router
+
+  plug Plug.Parsers,
+    parsers: [:json],
+    pass: ["application/json"],
+    json_decoder: Jason
+
+  plug :match
+  plug :dispatch
+
+  # Register an agent
+  post "/register" do
+    %{"agent_id" => agent_id} = conn.body_params
+    :ok = OpenclawMq.Registry.register(agent_id)
+    send_json(conn, 200, %{"status" => "registered", "agent_id" => agent_id})
+  end
+
+  # Agent heartbeat
+  post "/heartbeat" do
+    %{"agent_id" => agent_id} = conn.body_params
+    :ok = OpenclawMq.Registry.heartbeat(agent_id)
+    send_json(conn, 200, %{"status" => "ok"})
+  end
+
+  # Send a message
+  post "/send" do
+    case OpenclawMq.Message.new(conn.body_params) do
+      {:ok, msg} ->
+        :ok = OpenclawMq.Store.put(msg)
+
+        # Trigger delivery to the target agent
+        unless msg.to == "broadcast" do
+          OpenclawMq.Gateway.Dispatcher.deliver(msg.to, msg)
+        else
+          # For broadcasts, trigger all registered agents
+          for %{"id" => agent_id} <- OpenclawMq.Registry.list_agents() do
+            if agent_id != msg.from do
+              OpenclawMq.Gateway.Dispatcher.deliver(agent_id, msg)
+            end
+          end
+        end
+
+        send_json(conn, 201, OpenclawMq.Message.to_map(msg))
+
+      {:error, reason} ->
+        send_json(conn, 400, %{"error" => reason})
+    end
+  end
+
+  # Get inbox for an agent
+  get "/inbox/:agent_id" do
+    status_filter = conn.params["status"]
+    messages = OpenclawMq.Store.inbox(agent_id, status_filter)
+    send_json(conn, 200, %{"messages" => Enum.map(messages, &OpenclawMq.Message.to_map/1)})
+  end
+
+  # Update message status
+  patch "/messages/:id" do
+    %{"status" => new_status} = conn.body_params
+
+    case OpenclawMq.Store.update_status(id, new_status) do
+      :ok ->
+        send_json(conn, 200, %{"status" => "updated"})
+
+      {:error, reason} ->
+        send_json(conn, 404, %{"error" => reason})
+    end
+  end
+
+  # Queue health summary
+  get "/status" do
+    summary = OpenclawMq.Store.status_summary()
+    agents = OpenclawMq.Registry.list_agents()
+
+    send_json(conn, 200, %{
+      "checkedAt" => DateTime.utc_now() |> DateTime.to_iso8601(),
+      "queues" => summary,
+      "agents_online" => agents
+    })
+  end
+
+  # List registered agents
+  get "/agents" do
+    agents = OpenclawMq.Registry.list_agents()
+    send_json(conn, 200, %{"agents" => agents})
+  end
+
+  match _ do
+    send_json(conn, 404, %{"error" => "not found"})
+  end
+
+  defp send_json(conn, status, body) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(status, Jason.encode!(body))
+  end
+end

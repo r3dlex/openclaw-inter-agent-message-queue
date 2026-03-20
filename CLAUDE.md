@@ -1,0 +1,138 @@
+# CLAUDE.md — Developer Guide
+
+This file is for **you** (Claude, Copilot, or any AI agent working on this codebase). It tells you what this project is, how it's structured, and how to work on it.
+
+> For the OpenClaw **mq_agent** that operates this service at runtime, see `agent/AGENTS.md`.
+
+## What This Is
+
+An **Elixir/OTP inter-agent message queue** for [OpenClaw](https://docs.openclaw.ai). Agents (WhatsApp, Telegram, Discord, etc.) use this service to send messages to each other asynchronously via HTTP and WebSocket.
+
+## Quick Start
+
+```bash
+# Elixir service
+cd openclaw_mq && mix deps.get && mix test && mix run --no-halt
+
+# Python pipeline tools
+python3 -m tools.pipeline_runner.cli health
+
+# Docker (zero-install)
+cp .env.example .env  # Edit with real values
+make build && make up
+```
+
+## Repository Structure
+
+```
+├── openclaw_mq/           # Elixir/OTP service (the actual queue)
+│   ├── lib/openclaw_mq/   # Source code
+│   ├── config/            # Configuration (reads from env vars)
+│   └── test/              # Elixir tests
+├── agent/                 # OpenClaw agent workspace files (runtime)
+│   ├── AGENTS.md          # Agent entry point
+│   ├── SOUL.md            # Agent identity and boundaries
+│   ├── IDENTITY.md        # Agent metadata
+│   ├── TOOLS.md           # Environment-specific notes
+│   ├── HEARTBEAT.md       # Periodic tasks
+│   └── BOOT.md            # Startup instructions
+├── spec/                  # Specifications and architecture docs
+│   ├── ARCHITECTURE.md    # System design and component overview
+│   ├── API.md             # Full HTTP + WebSocket API reference
+│   ├── PROTOCOL.md        # Message format and field reference
+│   ├── PIPELINES.md       # CI/CD and operational pipelines
+│   ├── TROUBLESHOOTING.md # Common issues and fixes
+│   ├── LEARNINGS.md       # Operational lessons learned
+│   └── adr/               # Architecture Decision Records
+├── tools/                 # Python pipeline runner
+│   └── pipeline_runner/   # CLI for health, CI, deploy, monitor
+├── .github/workflows/     # GitHub Actions (CI + deploy)
+├── Dockerfile             # Multi-stage: Elixir release + Python tools
+├── docker-compose.yml     # Local development
+└── Makefile               # Developer commands
+```
+
+## Two Audiences
+
+| Audience | Files | Purpose |
+|----------|-------|---------|
+| **Developers / AI agents** improving this repo | `CLAUDE.md`, `spec/`, `openclaw_mq/`, `tools/`, `.github/` | Build, test, deploy |
+| **The mq_agent** operating this service | `agent/` | Runtime identity, monitoring, operations |
+
+## Working on the Elixir Service
+
+Source: `openclaw_mq/lib/openclaw_mq/`
+
+| Module | Role |
+|--------|------|
+| `Application` | OTP supervisor — starts all children |
+| `Registry` | GenServer tracking online agents + heartbeats |
+| `Store` | ETS-backed message storage + PubSub broadcast |
+| `Api.Router` | HTTP REST endpoints (Plug) |
+| `Api.WsHandler` | WebSocket handler (Cowboy) |
+| `Gateway.Dispatcher` | Async delivery via gateway RPC + CLI fallback |
+| `Gateway.RpcClient` | Ephemeral WebSockex client for gateway RPC |
+| `Reaper` | Periodic cleanup (stale agents, expired messages) |
+| `Message` | Message struct, validation, serialization |
+
+### Testing
+
+```bash
+cd openclaw_mq && mix test
+```
+
+### Building a Release
+
+```bash
+cd openclaw_mq && MIX_ENV=prod mix release
+```
+
+## Working on Python Tools
+
+Source: `tools/pipeline_runner/`
+
+These are operational pipelines — not the service itself. They check health, run CI, deploy, and monitor the Elixir service.
+
+```bash
+python3 -m tools.pipeline_runner.cli list    # Show available pipelines
+python3 -m tools.pipeline_runner.cli health  # Check service health
+```
+
+## Configuration
+
+All config is via environment variables. See `.env.example`.
+
+**Never hardcode secrets.** The Elixir config (`openclaw_mq/config/config.exs`) reads from `System.get_env/1`. The `.env` file is gitignored.
+
+## Key Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/status` | GET | Queue health summary |
+| `/agents` | GET | List registered agents |
+| `/register` | POST | Register an agent |
+| `/heartbeat` | POST | Agent heartbeat |
+| `/send` | POST | Send a message |
+| `/inbox/:agent_id` | GET | Fetch agent's inbox |
+| `/messages/:id` | PATCH | Update message status |
+| `ws://host:18791/ws` | WS | Real-time push |
+
+Full API: `spec/API.md`
+
+## Architecture
+
+See `spec/ARCHITECTURE.md` for the full system design. Key points:
+- OTP supervision tree with one_for_one strategy.
+- Phoenix.PubSub for real-time message fan-out.
+- ETS for fast in-memory storage.
+- Dispatcher bridges to OpenClaw gateway via WebSocket RPC.
+
+## ADRs
+
+Architecture decisions are in `spec/adr/`. Use [archgate](https://github.com/archgate-io/archgate-cli) or create manually.
+
+## CI/CD
+
+- **CI**: `.github/workflows/ci.yml` — Elixir compile + test, Python lint, Docker build.
+- **Deploy**: `.github/workflows/deploy.yml` — Push to `ghcr.io` on release.
+- **Pipelines**: `spec/PIPELINES.md` for full documentation.
