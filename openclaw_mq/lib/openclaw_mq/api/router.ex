@@ -3,15 +3,17 @@ defmodule OpenclawMq.Api.Router do
   HTTP API for agents to interact with the message queue.
 
   Endpoints:
-    POST   /register          - Register an agent
-    POST   /heartbeat         - Agent heartbeat
-    POST   /send              - Send a message (direct or broadcast)
-    GET    /inbox/:agent_id   - Get inbox for an agent
-    PATCH  /messages/:id      - Update message status
-    POST   /callback          - Register a callback URL for push delivery
-    DELETE /callback          - Remove a callback URL
-    GET    /status            - Queue health summary
-    GET    /agents            - List registered agents
+    POST   /register            - Register an agent (with optional metadata)
+    POST   /heartbeat           - Agent heartbeat
+    POST   /send                - Send a message (direct or broadcast)
+    GET    /inbox/:agent_id     - Get inbox for an agent
+    PATCH  /messages/:id        - Update message status
+    POST   /callback            - Register a callback URL for push delivery
+    DELETE /callback            - Remove a callback URL
+    GET    /status              - Queue health summary
+    GET    /agents              - List all registered agents (with metadata)
+    GET    /agents/:agent_id    - Get a single agent's profile
+    PUT    /agents/:agent_id    - Update an agent's metadata
   """
   use Plug.Router
 
@@ -23,10 +25,11 @@ defmodule OpenclawMq.Api.Router do
   plug :match
   plug :dispatch
 
-  # Register an agent
+  # Register an agent (with optional metadata)
   post "/register" do
     %{"agent_id" => agent_id} = conn.body_params
-    :ok = OpenclawMq.Registry.register(agent_id)
+    metadata = Map.drop(conn.body_params, ["agent_id"])
+    :ok = OpenclawMq.Registry.register(agent_id, metadata)
     send_json(conn, 200, %{"status" => "registered", "agent_id" => agent_id})
   end
 
@@ -108,10 +111,33 @@ defmodule OpenclawMq.Api.Router do
     send_json(conn, 200, %{"status" => "callback_removed", "agent_id" => agent_id})
   end
 
-  # List registered agents
+  # List registered agents (with metadata)
   get "/agents" do
     agents = OpenclawMq.Registry.list_agents()
     send_json(conn, 200, %{"agents" => agents})
+  end
+
+  # Get a single agent's profile
+  get "/agents/:agent_id" do
+    case OpenclawMq.Registry.get_agent(agent_id) do
+      {:ok, agent} ->
+        send_json(conn, 200, agent)
+
+      {:error, _} ->
+        send_json(conn, 404, %{"error" => "agent not found"})
+    end
+  end
+
+  # Update an agent's metadata
+  put "/agents/:agent_id" do
+    case OpenclawMq.Registry.update_metadata(agent_id, conn.body_params) do
+      :ok ->
+        {:ok, agent} = OpenclawMq.Registry.get_agent(agent_id)
+        send_json(conn, 200, agent)
+
+      {:error, reason} ->
+        send_json(conn, 404, %{"error" => reason})
+    end
   end
 
   match _ do

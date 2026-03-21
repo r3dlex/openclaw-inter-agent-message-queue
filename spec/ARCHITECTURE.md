@@ -53,10 +53,12 @@ OpenclawMq.Supervisor (one_for_one)
 
 ### Registry (`openclaw_mq/lib/openclaw_mq/registry.ex`)
 
-GenServer tracking online agents:
+GenServer tracking online agents and their discoverable metadata:
 
-- **Register/unregister** — agents declare themselves on session start.
+- **Register/unregister** — agents declare themselves on session start, with optional metadata (name, emoji, description, capabilities).
+- **Discovery** — agents query `GET /agents` to discover peers and their capabilities, or `GET /agents/:id` for a single profile.
 - **Heartbeat** — periodic liveness signal; auto-registers unknown agents.
+- **Metadata update** — `PUT /agents/:id` lets agents update their profile without re-registering.
 - **Reap** — removes agents that haven't heartbeated within the TTL (default 5 min).
 
 ### Store (`openclaw_mq/lib/openclaw_mq/store.ex`)

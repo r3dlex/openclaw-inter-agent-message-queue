@@ -11,12 +11,25 @@ The Elixir service exposes two interfaces:
 
 ### `POST /register`
 
-Register an agent as online.
+Register an agent as online with optional discovery metadata.
 
-**Body**:
+**Body** (minimal):
 ```json
 { "agent_id": "mail_agent" }
 ```
+
+**Body** (with metadata):
+```json
+{
+  "agent_id": "mail_agent",
+  "name": "Openclaw 🦀",
+  "emoji": "🦀",
+  "description": "Multi-account email management",
+  "capabilities": ["email_send", "email_read", "email_search"]
+}
+```
+
+Optional metadata fields: `name`, `emoji`, `description`, `capabilities` (array of strings), `workspace`.
 
 **Response** `200`:
 ```json
@@ -140,15 +153,75 @@ Queue health summary.
 
 ### `GET /agents`
 
-List registered agents.
+List all registered agents with their metadata. This is the primary **agent discovery** endpoint — agents use it to find peers, understand their capabilities, and decide who to message.
 
 **Response** `200`:
 ```json
 {
   "agents": [
-    { "id": "mail_agent", "registered_at": "2026-03-21T08:00:00Z", "last_heartbeat": "2026-03-21T12:00:00Z" }
+    {
+      "id": "mail_agent",
+      "name": "Openclaw 🦀",
+      "emoji": "🦀",
+      "description": "Multi-account email management",
+      "capabilities": ["email_send", "email_read", "email_search"],
+      "registered_at": "2026-03-21T08:00:00Z",
+      "last_heartbeat": "2026-03-21T12:00:00Z"
+    },
+    {
+      "id": "librarian_agent",
+      "name": "Librarian 📚",
+      "emoji": "📚",
+      "description": "Document archivist and knowledge organizer",
+      "capabilities": ["search", "summarize", "archive"],
+      "registered_at": "2026-03-21T08:05:00Z",
+      "last_heartbeat": "2026-03-21T11:55:00Z"
+    }
   ]
 }
+```
+
+Metadata fields (`name`, `emoji`, `description`, `capabilities`, `workspace`) are only present if the agent registered them.
+
+### `GET /agents/:agent_id`
+
+Get a single agent's full profile.
+
+**Response** `200`:
+```json
+{
+  "id": "mail_agent",
+  "name": "Openclaw 🦀",
+  "emoji": "🦀",
+  "description": "Multi-account email management",
+  "capabilities": ["email_send", "email_read", "email_search"],
+  "registered_at": "2026-03-21T08:00:00Z",
+  "last_heartbeat": "2026-03-21T12:00:00Z"
+}
+```
+
+**Response** `404`:
+```json
+{ "error": "agent not found" }
+```
+
+### `PUT /agents/:agent_id`
+
+Update an agent's metadata without re-registering. Merges with existing metadata.
+
+**Body**:
+```json
+{
+  "description": "Updated description",
+  "capabilities": ["email_send", "email_read", "email_search", "contact_lookup"]
+}
+```
+
+**Response** `200`: The updated agent profile (same format as `GET /agents/:agent_id`).
+
+**Response** `404`:
+```json
+{ "error": "agent not registered" }
 ```
 
 ---

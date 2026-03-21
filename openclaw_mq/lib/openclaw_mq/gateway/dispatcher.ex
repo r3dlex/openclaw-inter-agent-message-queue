@@ -143,11 +143,27 @@ defmodule OpenclawMq.Gateway.Dispatcher do
         {:error, reason} ->
           Logger.warning(
             "[Dispatcher] Gateway RPC failed for #{agent_id}: #{inspect(reason)}. " <>
-              "Message remains in inbox for passive pickup."
+              "Falling back to CLI."
           )
+
+          try_cli_fallback(agent_id, msg)
       end
     else
-      Logger.debug("[Dispatcher] No callback for #{agent_id}; message in inbox for passive pickup")
+      Logger.debug("[Dispatcher] No callback for #{agent_id}; trying CLI fallback.")
+      try_cli_fallback(agent_id, msg)
+    end
+  end
+
+  defp try_cli_fallback(agent_id, msg) do
+    case try_cli(agent_id, msg) do
+      :ok ->
+        Logger.info("[Dispatcher] Delivered to #{agent_id} via CLI")
+
+      {:error, reason} ->
+        Logger.warning(
+          "[Dispatcher] CLI fallback failed for #{agent_id}: #{inspect(reason)}. " <>
+            "Message remains in inbox for passive pickup."
+        )
     end
   end
 
@@ -183,6 +199,29 @@ defmodule OpenclawMq.Gateway.Dispatcher do
 
       {:error, reason} ->
         {:error, inspect(reason)}
+    end
+  end
+
+  # --- CLI fallback ---
+
+  defp try_cli(agent_id, msg) do
+    openclaw_bin = Application.get_env(:openclaw_mq, :openclaw_bin, "openclaw")
+
+    notification =
+      "[MQ] New message from #{msg.from} (#{msg.priority}): #{msg.subject}. " <>
+        "Check your inbox: curl http://127.0.0.1:18790/inbox/#{agent_id}?status=unread"
+
+    # Use `openclaw agent --agent <id> --message <text>` to wake the agent
+    case System.cmd(openclaw_bin, ["agent", "--agent", agent_id, "--message", notification],
+                stderr_to_stdout: true) do
+      {_output, 0} ->
+        :ok
+
+      {output, code} ->
+        Logger.warning(
+          "[Dispatcher] CLI `openclaw agent` failed for #{agent_id} (exit #{code}): " <>
+            String.slice(output, 0, 300)
+        )
     end
   end
 end

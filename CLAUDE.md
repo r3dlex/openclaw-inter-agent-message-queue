@@ -114,8 +114,10 @@ All config is via environment variables. See `.env.example`.
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/status` | GET | Queue health summary |
-| `/agents` | GET | List registered agents |
-| `/register` | POST | Register an agent |
+| `/agents` | GET | List all agents with metadata (discovery) |
+| `/agents/:agent_id` | GET | Get single agent profile |
+| `/agents/:agent_id` | PUT | Update agent metadata |
+| `/register` | POST | Register an agent (with optional metadata) |
 | `/heartbeat` | POST | Agent heartbeat |
 | `/send` | POST | Send a message |
 | `/inbox/:agent_id` | GET | Fetch agent's inbox |

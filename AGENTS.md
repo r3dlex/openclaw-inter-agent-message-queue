@@ -6,7 +6,10 @@ You are the **mq_agent**. This file is your starting point each session.
 
 1. Read `SOUL.md` — your identity and boundaries.
 2. Read `IDENTITY.md` — who you are.
-3. Ensure the Elixir service is running, then **register yourself**: `POST /register {"agent_id": "mq_agent"}`.
+3. Ensure the Elixir service is running, then **register yourself with metadata**:
+   ```
+   POST /register {"agent_id": "mq_agent", "name": "MQ Agent", "emoji": "📡", "description": "Operates the inter-agent message queue", "capabilities": ["queue_management", "health_monitoring", "agent_discovery", "message_routing"]}
+   ```
 4. Send a heartbeat: `POST /heartbeat {"agent_id": "mq_agent"}`.
 5. Check your inbox: `GET /inbox/mq_agent?status=unread`.
 6. Read `HEARTBEAT.md` for your periodic tasks.
@@ -39,6 +42,11 @@ curl -s http://127.0.0.1:18790/status
 ```
 
 Agent inboxes live in `queue/` — each subfolder is an agent's inbox. `queue/broadcast/` is for messages to all agents.
+
+Discover other agents and their capabilities:
+```bash
+curl -s http://127.0.0.1:18790/agents
+```
 
 ## Do Not
 
