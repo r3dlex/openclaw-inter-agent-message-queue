@@ -45,7 +45,7 @@ OpenclawMq.Supervisor (one_for_one)
 ├── OpenclawMq.Store        — GenServer with ETS-backed message storage
 ├── Plug.Cowboy (HTTP)      — REST API on port 18790
 ├── Plug.Cowboy (WS)        — WebSocket server on port 18791
-├── OpenclawMq.Gateway.Dispatcher — Async delivery via gateway RPC + CLI fallback
+├── OpenclawMq.Gateway.Dispatcher — Tiered delivery (HTTP callback, gateway RPC, passive inbox)
 └── OpenclawMq.Reaper       — Periodic cleanup (stale agents, expired messages)
 ```
 
@@ -78,10 +78,12 @@ Cowboy WebSocket handler for real-time push:
 
 ### Dispatcher (`openclaw_mq/lib/openclaw_mq/gateway/dispatcher.ex`)
 
-Async delivery to agents via the OpenClaw gateway:
+Tiered message delivery:
 
-- Tries gateway WebSocket RPC first (ephemeral connection via `WebSockex`).
-- Falls back to `openclaw run <agent_id>` CLI if gateway is unreachable.
+1. **WebSocket push** — handled automatically by PubSub in `Store.put/1`. No dispatcher action needed.
+2. **HTTP callback** — if the agent registered a callback URL via `POST /callback`, the dispatcher POSTs the full message JSON to that URL using OTP's `:httpc`.
+3. **Passive inbox** — message sits in ETS; agent picks it up on next heartbeat poll.
+4. **Gateway WS RPC** (optional, disabled by default) — ephemeral WebSocket connection to the OpenClaw gateway at `:18789` via `WebSockex`. Disabled due to gateway challenge-response handshake.
 
 ### Reaper (`openclaw_mq/lib/openclaw_mq/reaper.ex`)
 
@@ -101,7 +103,7 @@ Python CLI for operational pipelines (health, CI, deploy, monitor). See [PIPELIN
 2. Sender posts message via `POST /send` or WebSocket `{"action": "send"}`.
 3. Store persists to ETS and broadcasts via PubSub.
 4. Connected WebSocket clients receive instantly.
-5. Dispatcher notifies the target agent via gateway RPC (or CLI fallback).
+5. Dispatcher notifies via HTTP callback (if registered) or gateway RPC (if enabled).
 6. Recipient fetches inbox via `GET /inbox/:agent_id` or receives via WebSocket.
 7. Recipient acknowledges via `PATCH /messages/:id` or WebSocket `{"action": "ack"}`.
 

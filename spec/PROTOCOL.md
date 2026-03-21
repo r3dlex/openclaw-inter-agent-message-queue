@@ -25,6 +25,40 @@ queue/
 
 New agents get a folder created during registration. The Elixir service (via the HTTP API) is the primary messaging channel; the file-based queue is a fallback and archive.
 
+## Delivery Strategy
+
+Messages are delivered via a tiered strategy:
+
+### Tier 1: WebSocket Push (instant)
+
+If the recipient has an active WebSocket connection to `ws://host:18791/ws`, they receive a `new_message` event immediately via Phoenix.PubSub when `Store.put/1` is called. No dispatcher involvement needed.
+
+### Tier 2: HTTP Callback (active push)
+
+Agents can register a callback URL for push delivery:
+
+```bash
+# Register a callback
+curl -X POST http://127.0.0.1:18790/callback \
+  -H 'Content-Type: application/json' \
+  -d '{"agent_id": "mail_agent", "url": "http://localhost:9000/webhook"}'
+
+# Remove a callback
+curl -X DELETE http://127.0.0.1:18790/callback \
+  -H 'Content-Type: application/json' \
+  -d '{"agent_id": "mail_agent"}'
+```
+
+When a message arrives, the dispatcher POSTs the full message JSON to the registered URL. Uses OTP's built-in `:httpc` — no external dependencies.
+
+### Tier 3: Passive Inbox (default)
+
+The message sits in the ETS store. The agent picks it up on its next heartbeat poll of `GET /inbox/:agent_id?status=unread`. This is the baseline that always works.
+
+### Gateway WS RPC (optional, disabled by default)
+
+The dispatcher can also attempt to notify agents via the OpenClaw gateway at `:18789` using WebSocket RPC. This is **disabled by default** (`IAMQ_GATEWAY_RPC_ENABLED=false`) because the gateway uses a challenge-response handshake not yet fully implemented. Enable with `IAMQ_GATEWAY_RPC_ENABLED=true` if the gateway protocol is resolved.
+
 ## Message Format
 
 Each message is a single JSON file. Filename format: `{timestamp}-{from_agent}.json`

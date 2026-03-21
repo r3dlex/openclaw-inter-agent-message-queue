@@ -92,6 +92,34 @@ Update message status.
 
 Valid statuses: `unread`, `read`, `acted`, `archived`.
 
+### `POST /callback`
+
+Register a callback URL for push delivery. When a message arrives for this agent, the dispatcher POSTs the full message JSON to the URL.
+
+**Body**:
+```json
+{ "agent_id": "mail_agent", "url": "http://localhost:9000/webhook" }
+```
+
+**Response** `200`:
+```json
+{ "status": "callback_registered", "agent_id": "mail_agent", "url": "http://localhost:9000/webhook" }
+```
+
+### `DELETE /callback`
+
+Remove a callback URL.
+
+**Body**:
+```json
+{ "agent_id": "mail_agent" }
+```
+
+**Response** `200`:
+```json
+{ "status": "callback_removed", "agent_id": "mail_agent" }
+```
+
 ### `GET /status`
 
 Queue health summary.
@@ -105,7 +133,7 @@ Queue health summary.
     "broadcast": { "unread": 0, "read": 1, "acted": 3, "oldest_unread": null }
   },
   "agents_online": [
-    { "id": "mail_agent", "registered_at": 123456, "last_heartbeat": 123789 }
+    { "id": "mail_agent", "registered_at": "2026-03-21T08:00:00Z", "last_heartbeat": "2026-03-21T12:00:00Z" }
   ]
 }
 ```
@@ -118,7 +146,7 @@ List registered agents.
 ```json
 {
   "agents": [
-    { "id": "mail_agent", "registered_at": 123456, "last_heartbeat": 123789 }
+    { "id": "mail_agent", "registered_at": "2026-03-21T08:00:00Z", "last_heartbeat": "2026-03-21T12:00:00Z" }
   ]
 }
 ```

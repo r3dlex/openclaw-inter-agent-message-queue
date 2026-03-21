@@ -6,7 +6,25 @@ Operational lessons, post-mortems, and insights captured during development and 
 
 ---
 
-## 2026-03-21 — Dispatcher delivery failures
+## 2026-03-21 — Dispatcher rewrite: tiered delivery strategy
+
+**What happened**: Investigation revealed the gateway at `:18789` is a Node.js app that uses a challenge-response WebSocket handshake. The RPC client was connecting to the root path and immediately sending a payload, which the gateway rejected with `BadResponseError` because it expects a `connect.challenge` → `connect.auth` flow first. All three original delivery paths were broken.
+
+**Root cause**: The gateway sends `{"type":"event","event":"connect.challenge","payload":{"nonce":"...","ts":...}}` on connection. The RPC client must respond with an auth frame including the token and nonce before sending any RPC messages. Our client skipped this entirely.
+
+**What we changed**:
+- Rewrote the Dispatcher with a tiered delivery strategy:
+  1. **WebSocket push** — PubSub in `Store.put/1` handles this automatically for connected agents.
+  2. **HTTP callback** — New `POST /callback` endpoint lets agents register a webhook URL. Dispatcher POSTs the full message JSON via OTP's `:httpc`.
+  3. **Passive inbox** — Default fallback; agents poll `GET /inbox/:agent_id?status=unread` on heartbeat.
+- Gateway WS RPC is now **opt-in** (`IAMQ_GATEWAY_RPC_ENABLED=false` by default).
+- Removed `openclaw_bin` config key and CLI dispatch (commands were invalid).
+- Added `:inets` and `:ssl` to `extra_applications` for `:httpc`.
+- Added `POST /callback` and `DELETE /callback` endpoints to the router.
+
+---
+
+## 2026-03-21 — Dispatcher delivery failures (original)
 
 **What happened**: All 3 delivery paths failed after message enqueue:
 1. Gateway WebSocket RPC → `BadResponseError` (gateway process running but not accepting WS connections properly)

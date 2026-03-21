@@ -75,7 +75,7 @@ Source: `openclaw_mq/lib/openclaw_mq/`
 | `Store` | ETS-backed message storage + PubSub broadcast |
 | `Api.Router` | HTTP REST endpoints (Plug) |
 | `Api.WsHandler` | WebSocket handler (Cowboy) |
-| `Gateway.Dispatcher` | Async delivery via gateway RPC + CLI fallback |
+| `Gateway.Dispatcher` | Tiered delivery: HTTP callback, gateway RPC, passive inbox |
 | `Gateway.RpcClient` | Ephemeral WebSockex client for gateway RPC |
 | `Reaper` | Periodic cleanup (stale agents, expired messages) |
 | `Message` | Message struct, validation, serialization |
@@ -120,6 +120,8 @@ All config is via environment variables. See `.env.example`.
 | `/send` | POST | Send a message |
 | `/inbox/:agent_id` | GET | Fetch agent's inbox |
 | `/messages/:id` | PATCH | Update message status |
+| `/callback` | POST | Register HTTP callback URL for push delivery |
+| `/callback` | DELETE | Remove HTTP callback URL |
 | `ws://host:18791/ws` | WS | Real-time push |
 
 Full API: `spec/API.md`
@@ -130,7 +132,7 @@ See `spec/ARCHITECTURE.md` for the full system design. Key points:
 - OTP supervision tree with one_for_one strategy.
 - Phoenix.PubSub for real-time message fan-out.
 - ETS for fast in-memory storage.
-- Dispatcher bridges to OpenClaw gateway via WebSocket RPC.
+- Dispatcher uses tiered delivery: WebSocket push (PubSub), HTTP callback, passive inbox. Gateway RPC is optional.
 
 ## ADRs
 

@@ -50,10 +50,21 @@ Common issues and their solutions.
 
 **Symptom**: Dispatcher logs show "Gateway RPC failed".
 
+Gateway WS RPC is **disabled by default** (`IAMQ_GATEWAY_RPC_ENABLED=false`). The OpenClaw gateway uses a challenge-response handshake that the RPC client doesn't yet implement. If you enable it:
+
 1. Verify `OPENCLAW_GATEWAY_URL` in `.env` (default: `ws://127.0.0.1:18789`).
 2. Verify `OPENCLAW_GATEWAY_TOKEN` in `.env`.
 3. Check the OpenClaw gateway is running: `openclaw status`.
-4. The dispatcher falls back to CLI (`openclaw run <agent_id>`) automatically.
+4. Messages still arrive via HTTP callback (if registered) or passive inbox polling.
+
+## HTTP Callback Failures
+
+**Symptom**: Dispatcher logs show "HTTP callback failed".
+
+1. Verify the agent registered a callback URL: check dispatcher logs for registration.
+2. Ensure the callback URL is reachable from the MQ service host.
+3. The callback must respond with HTTP 2xx within 5 seconds.
+4. Messages still arrive in the passive inbox as a fallback.
 
 ## Docker Build Fails
 

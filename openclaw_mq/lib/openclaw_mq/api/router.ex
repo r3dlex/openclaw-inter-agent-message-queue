@@ -8,6 +8,8 @@ defmodule OpenclawMq.Api.Router do
     POST   /send              - Send a message (direct or broadcast)
     GET    /inbox/:agent_id   - Get inbox for an agent
     PATCH  /messages/:id      - Update message status
+    POST   /callback          - Register a callback URL for push delivery
+    DELETE /callback          - Remove a callback URL
     GET    /status            - Queue health summary
     GET    /agents            - List registered agents
   """
@@ -90,6 +92,20 @@ defmodule OpenclawMq.Api.Router do
       "queues" => summary,
       "agents_online" => agents
     })
+  end
+
+  # Register a callback URL for push delivery
+  post "/callback" do
+    %{"agent_id" => agent_id, "url" => url} = conn.body_params
+    :ok = OpenclawMq.Gateway.Dispatcher.register_callback(agent_id, url)
+    send_json(conn, 200, %{"status" => "callback_registered", "agent_id" => agent_id, "url" => url})
+  end
+
+  # Remove a callback URL
+  delete "/callback" do
+    %{"agent_id" => agent_id} = conn.body_params
+    :ok = OpenclawMq.Gateway.Dispatcher.unregister_callback(agent_id)
+    send_json(conn, 200, %{"status" => "callback_removed", "agent_id" => agent_id})
   end
 
   # List registered agents
