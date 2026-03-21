@@ -90,6 +90,9 @@ defmodule OpenclawMq.Registry do
 
     metadata = Map.merge(existing_meta, extract_metadata(opts))
 
+    # Persist metadata to disk so heartbeat auto-register can restore it
+    if metadata != %{}, do: persist_metadata(agent_id, metadata)
+
     entry = %{
       registered_at: now_wall,
       last_heartbeat: now_wall,
@@ -118,13 +121,20 @@ defmodule OpenclawMq.Registry do
 
     case Map.get(state, agent_id) do
       nil ->
-        Logger.info("[Registry] Agent auto-registered via heartbeat: #{agent_id}")
+        # Check if we have persisted metadata from a previous registration
+        persisted_meta = load_persisted_metadata(agent_id)
+
+        if persisted_meta != %{} do
+          Logger.info("[Registry] Agent auto-registered via heartbeat with persisted metadata: #{agent_id}")
+        else
+          Logger.info("[Registry] Agent auto-registered via heartbeat: #{agent_id}")
+        end
 
         entry = %{
           registered_at: now_wall,
           last_heartbeat: now_wall,
           last_heartbeat_mono: now_mono,
-          metadata: %{}
+          metadata: persisted_meta
         }
 
         {:reply, :ok, Map.put(state, agent_id, entry)}
@@ -144,6 +154,7 @@ defmodule OpenclawMq.Registry do
       info ->
         merged = Map.merge(Map.get(info, :metadata, %{}), extract_metadata(new_meta))
         updated = %{info | metadata: merged}
+        if merged != %{}, do: persist_metadata(agent_id, merged)
         Logger.info("[Registry] Metadata updated for #{agent_id}: #{inspect(Map.keys(merged))}")
         {:reply, :ok, Map.put(state, agent_id, updated)}
     end
@@ -226,4 +237,47 @@ defmodule OpenclawMq.Registry do
   defp maybe_put(map, _key, ""), do: map
   defp maybe_put(map, _key, []), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  # --- Metadata persistence ---
+
+  defp metadata_dir do
+    queue_dir = Application.get_env(:openclaw_mq, :queue_dir, "queue")
+    Path.join(queue_dir, ".metadata")
+  end
+
+  defp metadata_path(agent_id) do
+    Path.join(metadata_dir(), "#{agent_id}.json")
+  end
+
+  defp persist_metadata(agent_id, metadata) do
+    dir = metadata_dir()
+    File.mkdir_p!(dir)
+    path = metadata_path(agent_id)
+    json = Jason.encode!(metadata, pretty: true)
+
+    case File.write(path, json) do
+      :ok ->
+        Logger.debug("[Registry] Persisted metadata for #{agent_id}")
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("[Registry] Failed to persist metadata for #{agent_id}: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp load_persisted_metadata(agent_id) do
+    path = metadata_path(agent_id)
+
+    case File.read(path) do
+      {:ok, content} ->
+        case Jason.decode(content) do
+          {:ok, meta} when is_map(meta) -> meta
+          _ -> %{}
+        end
+
+      {:error, _} ->
+        %{}
+    end
+  end
 end

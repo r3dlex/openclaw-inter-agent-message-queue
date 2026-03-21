@@ -63,6 +63,7 @@ logs/
 
 # Queue message files (keep folder structure via .gitkeep, ignore runtime messages)
 queue/**/*.json
+queue/.metadata/
 
 # OpenClaw workspace runtime (agent-specific, not repo content)
 .openclaw/

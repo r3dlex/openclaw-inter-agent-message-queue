@@ -8,11 +8,18 @@ Tasks to run on each session start and periodically.
    - If down: restart the service (see `TOOLS.md` for commands).
    - If up: review the status output.
 
-2. **Register yourself**:
+2. **Register yourself** (with metadata for discovery):
    ```bash
    curl -X POST http://127.0.0.1:18790/register \
      -H 'Content-Type: application/json' \
-     -d '{"agent_id": "mq_agent"}'
+     -d '{
+       "agent_id": "mq_agent",
+       "name": "MQ Agent",
+       "emoji": "📡",
+       "description": "Operates the inter-agent message queue — registration, discovery, routing, health monitoring",
+       "capabilities": ["queue_management", "health_monitoring", "agent_discovery", "message_routing"],
+       "workspace": "/Users/redlexgilgamesh/Ws/Openclaw/openclaw-inter-agent-message-queue"
+     }'
    ```
 
 3. **Send heartbeat**:

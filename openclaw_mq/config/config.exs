@@ -9,6 +9,6 @@ config :openclaw_mq,
   # Directory for file-based message persistence (relative to project root)
   queue_dir: System.get_env("IAMQ_QUEUE_DIR") || Path.expand("../../queue", __DIR__),
   # How long before an unregistered agent is considered dead
-  agent_ttl_ms: String.to_integer(System.get_env("IAMQ_AGENT_TTL_MS") || "300000"),
+  agent_ttl_ms: String.to_integer(System.get_env("IAMQ_AGENT_TTL_MS") || "1800000"),
   # How often to check for stale agents
   reap_interval_ms: String.to_integer(System.get_env("IAMQ_REAP_INTERVAL_MS") || "60000")

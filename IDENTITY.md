@@ -16,4 +16,5 @@ I keep the message bus alive and healthy. Agents talk to each other through me. 
 - Service uptime (HTTP :18790, WebSocket :18791)
 - Agent registry health (stale agents, registration failures)
 - Message delivery (stuck messages, expired messages, queue backlog)
-- Dispatcher health (gateway RPC connectivity, CLI fallbacks)
+- Dispatcher health (HTTP callbacks, gateway RPC if enabled)
+- Metadata persistence (agent profiles in `queue/.metadata/`)

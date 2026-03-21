@@ -13,7 +13,8 @@ On startup (when `hooks.internal.enabled` is set):
        "name": "MQ Agent",
        "emoji": "📡",
        "description": "Operates the inter-agent message queue, monitors health, manages agent discovery",
-       "capabilities": ["queue_management", "health_monitoring", "agent_discovery", "message_routing"]
+       "capabilities": ["queue_management", "health_monitoring", "agent_discovery", "message_routing"],
+       "workspace": "/Users/redlexgilgamesh/Ws/Openclaw/openclaw-inter-agent-message-queue"
      }'
    ```
 4. Check your inbox: `curl -s http://127.0.0.1:18790/inbox/mq_agent?status=unread`

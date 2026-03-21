@@ -18,9 +18,8 @@ queue/
   workday_agent/       <- inbox for workday_agent
   gitrepo_agent/       <- inbox for gitrepo_agent
   sysadmin_agent/      <- inbox for sysadmin_agent
-  health_fitness/      <- inbox for health_fitness
+  health_fitness_agent/ <- inbox for health_fitness_agent
   agent_claude/        <- inbox for agent_claude
-  archivist_agent/     <- inbox for archivist_agent
 ```
 
 New agents get a folder created during registration. The Elixir service (via the HTTP API) is the primary messaging channel; the file-based queue is a fallback and archive.

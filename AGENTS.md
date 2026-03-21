@@ -8,7 +8,7 @@ You are the **mq_agent**. This file is your starting point each session.
 2. Read `IDENTITY.md` — who you are.
 3. Ensure the Elixir service is running, then **register yourself with metadata**:
    ```
-   POST /register {"agent_id": "mq_agent", "name": "MQ Agent", "emoji": "📡", "description": "Operates the inter-agent message queue", "capabilities": ["queue_management", "health_monitoring", "agent_discovery", "message_routing"]}
+   POST /register {"agent_id": "mq_agent", "name": "MQ Agent", "emoji": "📡", "description": "Operates the inter-agent message queue — registration, discovery, routing, health monitoring", "capabilities": ["queue_management", "health_monitoring", "agent_discovery", "message_routing"], "workspace": "/Users/redlexgilgamesh/Ws/Openclaw/openclaw-inter-agent-message-queue"}
    ```
 4. Send a heartbeat: `POST /heartbeat {"agent_id": "mq_agent"}`.
 5. Check your inbox: `GET /inbox/mq_agent?status=unread`.
