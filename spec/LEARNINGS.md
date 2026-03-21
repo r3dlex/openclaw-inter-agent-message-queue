@@ -6,6 +6,18 @@ Operational lessons, post-mortems, and insights captured during development and 
 
 ---
 
+## 2026-03-21 — Negative timestamp bug in Registry
+
+**What happened**: The `/agents` API returned negative values for `registered_at` and `last_heartbeat`, making agent status unreadable.
+
+**Why**: `System.monotonic_time(:millisecond)` returns VM-relative monotonic clock values (often negative), not wall-clock timestamps. These are correct for elapsed-time comparisons (reaping) but nonsensical as API output.
+
+**What we changed**: Registry now stores both:
+- `last_heartbeat_mono` — monotonic time, used internally by the Reaper for TTL comparisons.
+- `registered_at` / `last_heartbeat` — ISO-8601 wall-clock timestamps, exposed in the API.
+
+---
+
 ## 2026-03-21 — Architecture Decisions
 
 **Context**: Setting up the inter-agent message queue for OpenClaw.

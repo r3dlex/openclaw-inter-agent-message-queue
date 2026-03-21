@@ -52,14 +52,21 @@ defmodule OpenclawMq.Registry do
 
   @impl true
   def handle_call({:register, agent_id}, _from, state) do
-    now = System.monotonic_time(:millisecond)
+    now_mono = System.monotonic_time(:millisecond)
+    now_wall = DateTime.utc_now() |> DateTime.to_iso8601()
     Logger.info("[Registry] Agent registered: #{agent_id}")
 
     # Subscribe the agent to its own topic and broadcast
     Phoenix.PubSub.subscribe(OpenclawMq.PubSub, "agent:#{agent_id}")
     Phoenix.PubSub.subscribe(OpenclawMq.PubSub, "broadcast")
 
-    {:reply, :ok, Map.put(state, agent_id, %{registered_at: now, last_heartbeat: now})}
+    entry = %{
+      registered_at: now_wall,
+      last_heartbeat: now_wall,
+      last_heartbeat_mono: now_mono
+    }
+
+    {:reply, :ok, Map.put(state, agent_id, entry)}
   end
 
   @impl true
@@ -70,16 +77,25 @@ defmodule OpenclawMq.Registry do
 
   @impl true
   def handle_call({:heartbeat, agent_id}, _from, state) do
-    now = System.monotonic_time(:millisecond)
+    now_mono = System.monotonic_time(:millisecond)
+    now_wall = DateTime.utc_now() |> DateTime.to_iso8601()
 
     case Map.get(state, agent_id) do
       nil ->
         # Auto-register on heartbeat if not registered
         Logger.info("[Registry] Agent auto-registered via heartbeat: #{agent_id}")
-        {:reply, :ok, Map.put(state, agent_id, %{registered_at: now, last_heartbeat: now})}
+
+        entry = %{
+          registered_at: now_wall,
+          last_heartbeat: now_wall,
+          last_heartbeat_mono: now_mono
+        }
+
+        {:reply, :ok, Map.put(state, agent_id, entry)}
 
       info ->
-        {:reply, :ok, Map.put(state, agent_id, %{info | last_heartbeat: now})}
+        updated = %{info | last_heartbeat: now_wall, last_heartbeat_mono: now_mono}
+        {:reply, :ok, Map.put(state, agent_id, updated)}
     end
   end
 
@@ -109,7 +125,7 @@ defmodule OpenclawMq.Registry do
 
     {stale, alive} =
       Enum.split_with(state, fn {_id, info} ->
-        info.last_heartbeat < cutoff
+        info.last_heartbeat_mono < cutoff
       end)
 
     for {id, _} <- stale do
