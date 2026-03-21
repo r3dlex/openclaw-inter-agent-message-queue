@@ -63,12 +63,13 @@ GenServer tracking online agents and their discoverable metadata:
 
 ### Store (`openclaw_mq/lib/openclaw_mq/store.ex`)
 
-ETS-backed message persistence with PubSub broadcast:
+ETS-backed message storage with **disk persistence** and PubSub broadcast:
 
-- **put** — stores message, broadcasts via Phoenix.PubSub to the target topic.
+- **put** — stores message in ETS, writes JSON to `queue/{agent_id}/`, broadcasts via Phoenix.PubSub.
+- **load_from_disk** — on startup, loads all persisted messages from `queue/` into ETS. Messages survive restarts.
 - **inbox** — queries all messages for an agent (direct + broadcast), with optional status filter.
-- **update_status** — transitions: `unread` → `read` → `acted` → `archived`.
-- **purge_expired** / **purge_old** — cleanup for TTL and 7-day-old messages.
+- **update_status** — transitions: `unread` → `read` → `acted` → `archived`. Updates both ETS and disk.
+- **purge_expired** / **purge_old** — cleanup for TTL and 7-day-old messages. Deletes from both ETS and disk.
 
 ### WebSocket Handler (`openclaw_mq/lib/openclaw_mq/api/ws_handler.ex`)
 

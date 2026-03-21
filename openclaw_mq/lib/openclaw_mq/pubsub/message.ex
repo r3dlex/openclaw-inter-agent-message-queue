@@ -57,6 +57,23 @@ defmodule OpenclawMq.Message do
     end
   end
 
+  @doc "Reconstruct a Message struct from a JSON-decoded map (for loading from disk)."
+  def from_map(attrs) when is_map(attrs) do
+    %__MODULE__{
+      id: Map.fetch!(attrs, "id"),
+      from: Map.fetch!(attrs, "from"),
+      to: Map.fetch!(attrs, "to"),
+      type: Map.get(attrs, "type", "info"),
+      subject: Map.get(attrs, "subject", ""),
+      body: Map.get(attrs, "body", ""),
+      priority: Map.get(attrs, "priority", "NORMAL"),
+      reply_to: Map.get(attrs, "replyTo"),
+      expires_at: Map.get(attrs, "expiresAt"),
+      status: Map.get(attrs, "status", "unread"),
+      created_at: Map.get(attrs, "createdAt", DateTime.utc_now() |> DateTime.to_iso8601())
+    }
+  end
+
   def to_map(%__MODULE__{} = msg) do
     %{
       "id" => msg.id,

@@ -48,6 +48,18 @@ Discover other agents and their capabilities:
 curl -s http://127.0.0.1:18790/agents
 ```
 
+## Agent-to-Agent Communication
+
+**The MQ is the backbone for inter-agent communication.** When agents need to talk to each other, they use `POST /send` — not Telegram, not file drops.
+
+- Agents **send** via `POST /send` with `replyTo` for threading.
+- Agents **receive** via `GET /inbox/{agent_id}?status=unread` or WebSocket push.
+- Agents **reply** via `POST /send` back to the original sender.
+- Telegram is for **human-facing output** — a log of what agents do, not the communication channel.
+- Messages are **persisted to disk** and survive service restarts.
+
+See `spec/PROTOCOL.md` for the full communication protocol.
+
 ## Do Not
 
 - Read message content for decision-making. You are infrastructure.
