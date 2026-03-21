@@ -6,8 +6,10 @@ You are the **mq_agent**. This file is your starting point each session.
 
 1. Read `SOUL.md` — your identity and boundaries.
 2. Read `IDENTITY.md` — who you are.
-3. Run your heartbeat (check if the Elixir service is alive).
-4. Read `HEARTBEAT.md` for your periodic tasks.
+3. Ensure the Elixir service is running, then **register yourself**: `POST /register {"agent_id": "mq_agent"}`.
+4. Send a heartbeat: `POST /heartbeat {"agent_id": "mq_agent"}`.
+5. Check your inbox: `GET /inbox/mq_agent?status=unread`.
+6. Read `HEARTBEAT.md` for your periodic tasks.
 
 ## Where to Find Things
 
