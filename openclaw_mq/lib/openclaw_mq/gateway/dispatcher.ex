@@ -30,8 +30,15 @@ defmodule OpenclawMq.Gateway.Dispatcher do
         Logger.info("[Dispatcher] Delivered to #{agent_id} via gateway RPC")
 
       {:error, reason} ->
-        Logger.warn("[Dispatcher] Gateway RPC failed for #{agent_id}: #{reason}. Falling back to CLI.")
-        try_cli(agent_id, msg)
+        Logger.warn("[Dispatcher] Gateway RPC failed for #{agent_id}: #{reason}. Trying CLI fallback.")
+
+        case try_cli(agent_id, msg) do
+          :ok ->
+            Logger.info("[Dispatcher] Delivered to #{agent_id} via CLI")
+
+          {:error, cli_reason} ->
+            Logger.error("[Dispatcher] All delivery methods failed for #{agent_id}: RPC=#{reason}, CLI=#{cli_reason}")
+        end
     end
 
     {:noreply, state}
@@ -77,18 +84,30 @@ defmodule OpenclawMq.Gateway.Dispatcher do
   defp try_cli(agent_id, msg) do
     openclaw_bin = Application.get_env(:openclaw_mq, :openclaw_bin)
 
-    prompt =
+    notification =
       "[MQ] New message from #{msg.from} (#{msg.priority}): #{msg.subject}. " <>
-        "Read it at http://127.0.0.1:18790/inbox/#{agent_id}?status=unread"
+        "Check inbox: curl http://127.0.0.1:18790/inbox/#{agent_id}?status=unread"
 
-    case System.cmd(openclaw_bin, ["run", agent_id, "--message", prompt], stderr_to_stdout: true) do
-      {output, 0} ->
-        Logger.info("[Dispatcher] CLI delivery to #{agent_id} succeeded")
+    # Try `openclaw send` to deliver a message to the agent's session
+    case System.cmd(openclaw_bin, ["send", agent_id, notification], stderr_to_stdout: true) do
+      {_output, 0} ->
         :ok
 
       {output, code} ->
-        Logger.error("[Dispatcher] CLI delivery to #{agent_id} failed (exit #{code}): #{output}")
-        {:error, "CLI exit #{code}"}
+        Logger.warn("[Dispatcher] `openclaw send` failed (exit #{code}): #{String.slice(output, 0, 200)}")
+        # Last resort: try `openclaw message` if available
+        try_cli_message(openclaw_bin, agent_id, notification)
+    end
+  end
+
+  defp try_cli_message(openclaw_bin, agent_id, notification) do
+    case System.cmd(openclaw_bin, ["message", agent_id, notification], stderr_to_stdout: true) do
+      {_output, 0} ->
+        :ok
+
+      {output, code} ->
+        Logger.error("[Dispatcher] All CLI commands failed for #{agent_id} (exit #{code}): #{String.slice(output, 0, 200)}")
+        {:error, "no valid CLI command found"}
     end
   end
 end

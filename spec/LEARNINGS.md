@@ -6,6 +6,24 @@ Operational lessons, post-mortems, and insights captured during development and 
 
 ---
 
+## 2026-03-21 — Dispatcher delivery failures
+
+**What happened**: All 3 delivery paths failed after message enqueue:
+1. Gateway WebSocket RPC → `BadResponseError` (gateway process running but not accepting WS connections properly)
+2. CLI fallback → `openclaw run` is not a valid command
+3. Direct `sessions_send` → blocked by `tools.sessions.visibility=all` config
+
+**What we changed**:
+- Replaced `openclaw run <agent_id> --message` with `openclaw send <agent_id>` as the CLI fallback.
+- Added a second fallback to `openclaw message` if `send` also fails.
+- Improved error logging with truncated output to avoid log spam.
+
+**Still open**:
+- Gateway WS RPC `BadResponseError` needs investigation — likely a protocol mismatch in the RPC payload format or the gateway expects a different WebSocket handshake.
+- The `tools.sessions.visibility` config may need adjusting on the gateway side.
+
+---
+
 ## 2026-03-21 — Negative timestamp bug in Registry
 
 **What happened**: The `/agents` API returned negative values for `registered_at` and `last_heartbeat`, making agent status unreadable.
