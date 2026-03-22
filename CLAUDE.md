@@ -71,11 +71,11 @@ Source: `openclaw_mq/lib/openclaw_mq/`
 | Module | Role |
 |--------|------|
 | `Application` | OTP supervisor — starts all children |
-| `Registry` | GenServer tracking online agents + heartbeats |
-| `Store` | ETS-backed message storage + PubSub broadcast |
+| `Registry` | GenServer tracking online agents, heartbeats, and discoverable metadata |
+| `Store` | ETS-backed message storage + PubSub broadcast + disk persistence |
 | `Api.Router` | HTTP REST endpoints (Plug) |
 | `Api.WsHandler` | WebSocket handler (Cowboy) |
-| `Gateway.Dispatcher` | Tiered delivery: HTTP callback, gateway RPC, passive inbox |
+| `Gateway.Dispatcher` | Tiered delivery: HTTP callback, gateway RPC, CLI fallback, passive inbox |
 | `Gateway.RpcClient` | Ephemeral WebSockex client for gateway RPC |
 | `Reaper` | Periodic cleanup (stale agents, expired messages) |
 | `Message` | Message struct, validation, serialization |

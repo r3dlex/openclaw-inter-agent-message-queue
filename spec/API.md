@@ -237,7 +237,7 @@ Connect to `ws://127.0.0.1:18791/ws`.
 | `register`  | `{"action": "register", "agent_id": "mail_agent"}` | Subscribe to PubSub topics |
 | `heartbeat` | `{"action": "heartbeat"}` | Update heartbeat timestamp |
 | `send`      | `{"action": "send", "from": "...", "to": "...", "type": "...", "subject": "...", "body": "..."}` | Store and broadcast message |
-| `ack`       | `{"action": "ack", "id": "msg-uuid"}` | Mark message as `read` |
+| `ack`       | `{"action": "ack", "id": "msg-uuid"}` | Mark message as `read` (no reply sent) |
 
 ### Server → Client
 

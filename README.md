@@ -5,9 +5,10 @@ An Elixir/OTP message queue that enables [OpenClaw](https://docs.openclaw.ai) ag
 ## Features
 
 - **Agent-to-agent messaging** — Send direct messages or broadcast to all agents.
-- **Real-time delivery** — WebSocket push via Phoenix.PubSub; HTTP polling as fallback.
-- **Agent registry** — Track online agents with heartbeat-based liveness detection.
-- **Gateway integration** — Bridges to the OpenClaw gateway via RPC for agent notification.
+- **Tiered delivery** — WebSocket push, HTTP callbacks, CLI fallback, passive inbox polling.
+- **Agent discovery** — Agents register with metadata (name, emoji, capabilities) and discover peers via `GET /agents`.
+- **Disk persistence** — Messages survive service restarts; stored as JSON in `queue/`.
+- **Agent registry** — Track online agents with heartbeat-based liveness detection and metadata persistence.
 - **Self-healing** — OTP supervision restarts failed components; Reaper cleans up stale data.
 - **Zero-install deployment** — Docker multi-stage build (Elixir release + Python tools).
 
@@ -38,12 +39,16 @@ mix run --no-halt
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/status` | GET | Queue health summary |
-| `/agents` | GET | List registered agents |
-| `/register` | POST | Register an agent |
+| `/agents` | GET | List all agents with metadata (discovery) |
+| `/agents/:agent_id` | GET | Get single agent profile |
+| `/agents/:agent_id` | PUT | Update agent metadata |
+| `/register` | POST | Register an agent (with optional metadata) |
 | `/heartbeat` | POST | Agent heartbeat |
 | `/send` | POST | Send a message |
 | `/inbox/:agent_id` | GET | Fetch agent's inbox |
 | `/messages/:id` | PATCH | Update message status |
+| `/callback` | POST | Register HTTP callback URL for push delivery |
+| `/callback` | DELETE | Remove HTTP callback URL |
 | `ws://:18791/ws` | WS | Real-time push |
 
 Full API reference: [spec/API.md](spec/API.md)
@@ -51,10 +56,10 @@ Full API reference: [spec/API.md](spec/API.md)
 ## Architecture
 
 ```
-Agents ──REST/WS──▶ OpenClaw MQ (Elixir/OTP) ──RPC──▶ OpenClaw Gateway
-                    ├── Registry (GenServer)
-                    ├── Store (ETS + PubSub)
-                    ├── Dispatcher (gateway RPC + CLI fallback)
+Agents ──REST/WS──▶ OpenClaw MQ (Elixir/OTP) ──callback/RPC──▶ Agents / Gateway
+                    ├── Registry (GenServer + metadata persistence)
+                    ├── Store (ETS + PubSub + disk persistence)
+                    ├── Dispatcher (HTTP callback, gateway RPC, CLI fallback)
                     └── Reaper (periodic cleanup)
 ```
 
@@ -105,10 +110,12 @@ All settings via environment variables. See [.env.example](.env.example).
 |----------|---------|---------|
 | `IAMQ_HTTP_PORT` | `18790` | HTTP API port |
 | `IAMQ_WS_PORT` | `18791` | WebSocket port |
+| `IAMQ_AGENT_TTL_MS` | `1800000` | Agent heartbeat TTL (30 min) |
+| `IAMQ_REAP_INTERVAL_MS` | `60000` | Reaper check interval (1 min) |
+| `IAMQ_QUEUE_DIR` | `../../queue` | Directory for message persistence |
+| `IAMQ_GATEWAY_RPC_ENABLED` | `false` | Enable gateway WS RPC delivery |
 | `OPENCLAW_GATEWAY_URL` | `ws://127.0.0.1:18789` | Gateway WebSocket URL |
-| `OPENCLAW_GATEWAY_TOKEN` | (required) | Gateway auth token |
-| `OPENCLAW_BIN` | `openclaw` | Path to openclaw CLI |
-| `IAMQ_AGENT_TTL_MS` | `300000` | Agent heartbeat timeout |
+| `OPENCLAW_GATEWAY_TOKEN` | `""` | Gateway auth token (for RPC) |
 
 ## License
 

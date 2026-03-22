@@ -41,11 +41,11 @@ The **OpenClaw Inter-Agent Message Queue (IAMQ)** is an Elixir/OTP service that 
 ```
 OpenclawMq.Supervisor (one_for_one)
 ├── Phoenix.PubSub          — Pub/sub backbone for real-time message fan-out
-├── OpenclawMq.Registry     — GenServer tracking online agents + heartbeats
-├── OpenclawMq.Store        — GenServer with ETS-backed message storage
+├── OpenclawMq.Registry     — GenServer tracking online agents, heartbeats, and metadata
+├── OpenclawMq.Store        — GenServer with ETS-backed message storage + disk persistence
 ├── Plug.Cowboy (HTTP)      — REST API on port 18790
 ├── Plug.Cowboy (WS)        — WebSocket server on port 18791
-├── OpenclawMq.Gateway.Dispatcher — Tiered delivery (HTTP callback, gateway RPC, passive inbox)
+├── OpenclawMq.Gateway.Dispatcher — Tiered delivery (HTTP callback, gateway RPC, CLI fallback, passive inbox)
 └── OpenclawMq.Reaper       — Periodic cleanup (stale agents, expired messages)
 ```
 
@@ -59,7 +59,8 @@ GenServer tracking online agents and their discoverable metadata:
 - **Discovery** — agents query `GET /agents` to discover peers and their capabilities, or `GET /agents/:id` for a single profile.
 - **Heartbeat** — periodic liveness signal; auto-registers unknown agents.
 - **Metadata update** — `PUT /agents/:id` lets agents update their profile without re-registering.
-- **Reap** — removes agents that haven't heartbeated within the TTL (default 5 min).
+- **Metadata persistence** — metadata saved to `queue/.metadata/` and restored on heartbeat auto-register.
+- **Reap** — removes agents that haven't heartbeated within the TTL (default 30 min).
 
 ### Store (`openclaw_mq/lib/openclaw_mq/store.ex`)
 
@@ -85,8 +86,9 @@ Tiered message delivery:
 
 1. **WebSocket push** — handled automatically by PubSub in `Store.put/1`. No dispatcher action needed.
 2. **HTTP callback** — if the agent registered a callback URL via `POST /callback`, the dispatcher POSTs the full message JSON to that URL using OTP's `:httpc`.
-3. **Passive inbox** — message sits in ETS; agent picks it up on next heartbeat poll.
-4. **Gateway WS RPC** (optional, disabled by default) — ephemeral WebSocket connection to the OpenClaw gateway at `:18789` via `WebSockex`. Disabled due to gateway challenge-response handshake.
+3. **Gateway WS RPC** (optional, disabled by default) — ephemeral WebSocket connection to the OpenClaw gateway at `:18789` via `WebSockex`. Disabled due to gateway challenge-response handshake.
+4. **CLI fallback** — `openclaw agent --agent <id> --message <text>` to wake the agent via the OpenClaw CLI.
+5. **Passive inbox** — message sits in ETS; agent picks it up on next heartbeat poll.
 
 ### Reaper (`openclaw_mq/lib/openclaw_mq/reaper.ex`)
 

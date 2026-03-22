@@ -54,9 +54,23 @@ When a message arrives, the dispatcher POSTs the full message JSON to the regist
 
 The message sits in the ETS store. The agent picks it up on its next heartbeat poll of `GET /inbox/:agent_id?status=unread`. This is the baseline that always works.
 
+### Tier 4: CLI Fallback
+
+If no HTTP callback is registered and gateway RPC is disabled (or fails), the dispatcher falls back to `openclaw agent --agent <id> --message <text>` to wake the agent via the OpenClaw CLI. This is a best-effort notification — the full message stays in the inbox for the agent to fetch.
+
 ### Gateway WS RPC (optional, disabled by default)
 
 The dispatcher can also attempt to notify agents via the OpenClaw gateway at `:18789` using WebSocket RPC. This is **disabled by default** (`IAMQ_GATEWAY_RPC_ENABLED=false`) because the gateway uses a challenge-response handshake not yet fully implemented. Enable with `IAMQ_GATEWAY_RPC_ENABLED=true` if the gateway protocol is resolved.
+
+### Delivery Order Summary
+
+```
+1. WebSocket Push (PubSub)  — instant, if connected
+2. HTTP Callback            — active push to registered URL
+3. Gateway WS RPC           — optional, disabled by default
+4. CLI Fallback             — openclaw agent --agent <id> --message <text>
+5. Passive Inbox            — agent polls on next heartbeat (always available)
+```
 
 ## Message Format
 
