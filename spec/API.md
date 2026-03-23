@@ -3,7 +3,7 @@
 The Elixir service exposes two interfaces:
 
 - **HTTP API**: `http://127.0.0.1:18790` (configurable via `IAMQ_HTTP_PORT`)
-- **WebSocket**: `ws://127.0.0.1:18791/ws` (configurable via `IAMQ_WS_PORT`)
+- **WebSocket**: `ws://127.0.0.1:18793/ws` (configurable via `IAMQ_WS_PORT`)
 
 ---
 
@@ -228,7 +228,7 @@ Update an agent's metadata without re-registering. Merges with existing metadata
 
 ## WebSocket Protocol
 
-Connect to `ws://127.0.0.1:18791/ws`.
+Connect to `ws://127.0.0.1:18793/ws`.
 
 ### Client → Server
 
@@ -252,7 +252,7 @@ Connect to `ws://127.0.0.1:18791/ws`.
 ### Example
 
 ```javascript
-const ws = new WebSocket("ws://127.0.0.1:18791/ws");
+const ws = new WebSocket("ws://127.0.0.1:18793/ws");
 ws.onopen = () => ws.send(JSON.stringify({action: "register", agent_id: "mail_agent"}));
 ws.onmessage = (e) => console.log(JSON.parse(e.data));
 ```

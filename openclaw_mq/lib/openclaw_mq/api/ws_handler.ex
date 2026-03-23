@@ -2,7 +2,7 @@ defmodule OpenclawMq.Api.WsHandler do
   @moduledoc """
   WebSocket handler for real-time push to agents.
 
-  Agents connect to ws://localhost:18791/ws and send:
+  Agents connect to ws://localhost:18793/ws and send:
     {"action": "register", "agent_id": "mail_agent"}
 
   They then receive pushed messages in real-time:

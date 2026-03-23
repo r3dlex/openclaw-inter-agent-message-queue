@@ -8,7 +8,7 @@ Common issues and their solutions.
 
 1. Check Elixir is installed: `mix --version` (requires Elixir ~> 1.15).
 2. Fetch deps: `cd openclaw_mq && mix deps.get`.
-3. Check port conflict: `lsof -i :18790` or `lsof -i :18791`.
+3. Check port conflict: `lsof -i :18790` or `lsof -i :18793`.
 4. For Docker: verify Docker is running (`docker info`), then `make build && make up`.
 5. Check logs: `make logs` (Docker) or `/tmp/openclaw/openclaw-mq.log` (LaunchAgent).
 

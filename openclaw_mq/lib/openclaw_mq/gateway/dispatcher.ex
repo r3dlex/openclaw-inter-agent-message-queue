@@ -2,7 +2,7 @@ defmodule OpenclawMq.Gateway.Dispatcher do
   @moduledoc """
   Delivers messages to agents using a tiered strategy:
 
-  1. **WebSocket push** — If the agent has an active WS connection to :18791/ws,
+  1. **WebSocket push** — If the agent has an active WS connection to :18793/ws,
      `Store.put/1` already broadcasts via PubSub. No dispatcher action needed.
   2. **HTTP callback** — If the agent registered a callback URL via `POST /callback`,
      the dispatcher POSTs the full message JSON to that URL.

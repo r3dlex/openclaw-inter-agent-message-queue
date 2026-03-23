@@ -55,7 +55,7 @@ COPY pyproject.toml ./
 COPY scripts/entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
-EXPOSE 18790 18791
+EXPOSE 18790 18793
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD curl -f http://localhost:18790/status || exit 1

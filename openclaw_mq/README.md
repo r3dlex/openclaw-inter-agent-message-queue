@@ -7,7 +7,7 @@ Elixir/OTP inter-agent message queue for OpenClaw agents.
 | Interface | Default | Env Var |
 |-----------|---------|---------|
 | HTTP API  | `http://127.0.0.1:18790` | `IAMQ_HTTP_PORT` |
-| WebSocket | `ws://127.0.0.1:18791/ws` | `IAMQ_WS_PORT` |
+| WebSocket | `ws://127.0.0.1:18793/ws` | `IAMQ_WS_PORT` |
 
 ## Setup
 

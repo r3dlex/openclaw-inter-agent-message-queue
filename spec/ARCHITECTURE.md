@@ -27,7 +27,7 @@ The **OpenClaw Inter-Agent Message Queue (IAMQ)** is an Elixir/OTP service that 
               │  │     Phoenix.PubSub        │ │
               │  └───────────────────────────┘ │
               └────────────────────────────────┘
-               :18790 (HTTP)    :18791 (WebSocket)
+               :18790 (HTTP)    :18793 (WebSocket)
                            │
                     ┌──────▼──────┐
                     │  OpenClaw   │
@@ -44,7 +44,7 @@ OpenclawMq.Supervisor (one_for_one)
 ├── OpenclawMq.Registry     — GenServer tracking online agents, heartbeats, and metadata
 ├── OpenclawMq.Store        — GenServer with ETS-backed message storage + disk persistence
 ├── Plug.Cowboy (HTTP)      — REST API on port 18790
-├── Plug.Cowboy (WS)        — WebSocket server on port 18791
+├── Plug.Cowboy (WS)        — WebSocket server on port 18793
 ├── OpenclawMq.Gateway.Dispatcher — Tiered delivery (HTTP callback, gateway RPC, CLI fallback, passive inbox)
 └── OpenclawMq.Reaper       — Periodic cleanup (stale agents, expired messages)
 ```
@@ -76,7 +76,7 @@ ETS-backed message storage with **disk persistence** and PubSub broadcast:
 
 Cowboy WebSocket handler for real-time push:
 
-- Agents connect to `ws://host:18791/ws`.
+- Agents connect to `ws://host:18793/ws`.
 - Actions: `register`, `heartbeat`, `send`, `ack`.
 - Subscribes to PubSub topics for real-time message delivery.
 

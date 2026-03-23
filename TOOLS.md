@@ -5,7 +5,7 @@ Notes specific to this deployment. Update as your environment changes.
 ## Service Endpoints
 
 - HTTP API: `http://127.0.0.1:18790`
-- WebSocket: `ws://127.0.0.1:18791/ws`
+- WebSocket: `ws://127.0.0.1:18793/ws`
 - OpenClaw Gateway: `ws://127.0.0.1:18789`
 
 ## Key Commands

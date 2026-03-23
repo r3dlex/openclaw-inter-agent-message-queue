@@ -124,7 +124,7 @@ All config is via environment variables. See `.env.example`.
 | `/messages/:id` | PATCH | Update message status |
 | `/callback` | POST | Register HTTP callback URL for push delivery |
 | `/callback` | DELETE | Remove HTTP callback URL |
-| `ws://host:18791/ws` | WS | Real-time push |
+| `ws://host:18793/ws` | WS | Real-time push |
 
 Full API: `spec/API.md`
 

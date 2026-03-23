@@ -30,7 +30,7 @@ Messages are delivered via a tiered strategy:
 
 ### Tier 1: WebSocket Push (instant)
 
-If the recipient has an active WebSocket connection to `ws://host:18791/ws`, they receive a `new_message` event immediately via Phoenix.PubSub when `Store.put/1` is called. No dispatcher involvement needed.
+If the recipient has an active WebSocket connection to `ws://host:18793/ws`, they receive a `new_message` event immediately via Phoenix.PubSub when `Store.put/1` is called. No dispatcher involvement needed.
 
 ### Tier 2: HTTP Callback (active push)
 

@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     ports:
       - "${IAMQ_HTTP_PORT:-18790}:18790"
-      - "${IAMQ_WS_PORT:-18791}:18791"
+      - "${IAMQ_WS_PORT:-18793}:18793"
     env_file:
       - .env
     healthcheck:

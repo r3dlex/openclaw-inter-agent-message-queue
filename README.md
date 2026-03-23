@@ -49,7 +49,7 @@ mix run --no-halt
 | `/messages/:id` | PATCH | Update message status |
 | `/callback` | POST | Register HTTP callback URL for push delivery |
 | `/callback` | DELETE | Remove HTTP callback URL |
-| `ws://:18791/ws` | WS | Real-time push |
+| `ws://:18793/ws` | WS | Real-time push |
 
 Full API reference: [spec/API.md](spec/API.md)
 
@@ -109,7 +109,7 @@ All settings via environment variables. See [.env.example](.env.example).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `IAMQ_HTTP_PORT` | `18790` | HTTP API port |
-| `IAMQ_WS_PORT` | `18791` | WebSocket port |
+| `IAMQ_WS_PORT` | `18793` | WebSocket port |
 | `IAMQ_AGENT_TTL_MS` | `1800000` | Agent heartbeat TTL (30 min) |
 | `IAMQ_REAP_INTERVAL_MS` | `60000` | Reaper check interval (1 min) |
 | `IAMQ_QUEUE_DIR` | `../../queue` | Directory for message persistence |

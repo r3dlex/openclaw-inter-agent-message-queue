@@ -7,7 +7,7 @@ defmodule OpenclawMq do
   - Phoenix.PubSub for in-process topic routing
   - ETS-backed message store
   - HTTP API (port 18790) for agents to send/receive via curl
-  - WebSocket server (port 18791) for real-time push
+  - WebSocket server (port 18793) for real-time push
   - OpenClaw gateway RPC + CLI fallback for triggering agents
 
   ## Quick Start

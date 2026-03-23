@@ -4,7 +4,7 @@ defmodule OpenclawMq.Application do
   @impl true
   def start(_type, _args) do
     http_port = Application.get_env(:openclaw_mq, :http_port, 18790)
-    ws_port = Application.get_env(:openclaw_mq, :ws_port, 18791)
+    ws_port = Application.get_env(:openclaw_mq, :ws_port, 18793)
 
     children = [
       # PubSub backbone
