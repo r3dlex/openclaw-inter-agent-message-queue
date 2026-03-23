@@ -5,9 +5,9 @@ from __future__ import annotations
 import argparse
 import sys
 
-from tools.pipeline_runner.pipelines.health_check import run_health_check
 from tools.pipeline_runner.pipelines.ci import run_ci_pipeline
 from tools.pipeline_runner.pipelines.deploy import run_deploy_pipeline
+from tools.pipeline_runner.pipelines.health_check import run_health_check
 from tools.pipeline_runner.pipelines.queue_monitor import run_queue_monitor
 
 
