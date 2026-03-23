@@ -13,7 +13,7 @@ defmodule OpenclawMq.Api.WsHandler do
   require Logger
 
   @impl true
-  def init(req, state) do
+  def init(req, _state) do
     {:cowboy_websocket, req, %{agent_id: nil}, %{idle_timeout: 300_000}}
   end
 

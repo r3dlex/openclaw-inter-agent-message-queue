@@ -36,6 +36,9 @@ defmodule OpenclawMq.Message do
   @valid_types ~w(request response info error)
   @valid_statuses ~w(unread read acted archived)
 
+  @doc "Check whether a status string is valid."
+  def valid_status?(s), do: s in @valid_statuses
+
   def new(attrs) when is_map(attrs) do
     msg = %__MODULE__{
       id: UUID.uuid4(),

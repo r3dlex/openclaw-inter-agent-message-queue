@@ -13,3 +13,12 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  # Reusable IAMQ sidecar — build once, used by all agents via
+  # `image: openclaw-iamq-sidecar` in their docker-compose.yml.
+  # Agents only need to set environment variables for identity.
+  sidecar:
+    build: ./sidecar
+    image: openclaw-iamq-sidecar:latest
+    profiles:
+      - build-sidecar

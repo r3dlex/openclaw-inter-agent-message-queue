@@ -8,7 +8,7 @@ defmodule OpenclawMq.Gateway.RpcClient do
   require Logger
 
   @impl true
-  def handle_connect(_conn, %{payload: payload, caller: caller} = state) do
+  def handle_connect(_conn, %{payload: payload, caller: _caller} = state) do
     # Send the payload immediately upon connection
     {:reply, {:text, payload}, state}
   end
