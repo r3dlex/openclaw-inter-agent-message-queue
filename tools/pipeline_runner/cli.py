@@ -10,7 +10,6 @@ from tools.pipeline_runner.pipelines.deploy import run_deploy_pipeline
 from tools.pipeline_runner.pipelines.health_check import run_health_check
 from tools.pipeline_runner.pipelines.queue_monitor import run_queue_monitor
 
-
 PIPELINES = {
     "health": ("Health check — verify service and dependencies are running", run_health_check),
     "ci": ("CI pipeline — lint, test, build", run_ci_pipeline),
