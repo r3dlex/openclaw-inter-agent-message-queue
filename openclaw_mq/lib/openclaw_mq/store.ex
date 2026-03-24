@@ -190,7 +190,10 @@ defmodule OpenclawMq.Store do
     else
       dir
       |> File.ls!()
-      |> Enum.filter(fn entry -> File.dir?(Path.join(dir, entry)) end)
+      |> Enum.filter(fn entry ->
+        entry not in [".", "..", ".metadata", "all", "broadcast", "main"] and
+        File.dir?(Path.join(dir, entry))
+      end)
       |> Enum.flat_map(fn agent_dir_name ->
         agent_path = Path.join(dir, agent_dir_name)
         load_agent_messages(agent_path)

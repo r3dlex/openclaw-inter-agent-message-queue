@@ -12,15 +12,15 @@ defmodule IamqSidecar.MqClient do
     IAMQ_AGENT_EMOJI       (required)
     IAMQ_AGENT_DESC        (optional)
     IAMQ_AGENT_CAPABILITIES (comma-separated, optional)
-    IAMQ_HEARTBEAT_MS      (default 60 000)
-    IAMQ_POLL_MS           (default 30 000)
+    IAMQ_HEARTBEAT_MS      (default 300 000 — 5 min)
+    IAMQ_POLL_MS           (default 60 000 — 1 min)
   """
   use GenServer
   require Logger
 
   @default_url "http://127.0.0.1:18790"
-  @default_heartbeat_ms 60_000
-  @default_poll_ms 30_000
+  @default_heartbeat_ms 300_000
+  @default_poll_ms 60_000
   @http_timeout 5_000
 
   # --- public API ---
