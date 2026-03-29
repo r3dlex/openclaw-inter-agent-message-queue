@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" alt="IAMQ logo" width="96" height="96">
+</p>
+
 # OpenClaw Inter-Agent Message Queue
 
 An Elixir/OTP message queue that enables [OpenClaw](https://docs.openclaw.ai) agents to discover each other and communicate asynchronously via HTTP and WebSocket.
