@@ -17,13 +17,14 @@ defmodule OpenclawMq.Api.Router do
   """
   use Plug.Router
 
-  plug Plug.Parsers,
+  plug(Plug.Parsers,
     parsers: [:json],
     pass: ["application/json"],
     json_decoder: Jason
+  )
 
-  plug :match
-  plug :dispatch
+  plug(:match)
+  plug(:dispatch)
 
   # Register an agent (with optional metadata)
   post "/register" do
@@ -101,7 +102,12 @@ defmodule OpenclawMq.Api.Router do
   post "/callback" do
     %{"agent_id" => agent_id, "url" => url} = conn.body_params
     :ok = OpenclawMq.Gateway.Dispatcher.register_callback(agent_id, url)
-    send_json(conn, 200, %{"status" => "callback_registered", "agent_id" => agent_id, "url" => url})
+
+    send_json(conn, 200, %{
+      "status" => "callback_registered",
+      "agent_id" => agent_id,
+      "url" => url
+    })
   end
 
   # Remove a callback URL

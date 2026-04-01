@@ -21,10 +21,7 @@ defmodule OpenclawMq.Application do
 
       # WebSocket server for real-time push to agents
       {Plug.Cowboy,
-       scheme: :http,
-       plug: OpenclawMq.Api.WsRouter,
-       port: ws_port,
-       dispatch: ws_dispatch()},
+       scheme: :http, plug: OpenclawMq.Api.WsRouter, port: ws_port, dispatch: ws_dispatch()},
 
       # OpenClaw gateway RPC client (with CLI fallback)
       OpenclawMq.Gateway.Dispatcher,

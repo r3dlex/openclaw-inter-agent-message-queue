@@ -163,7 +163,9 @@ defmodule OpenclawMq.Store do
     json = Jason.encode!(OpenclawMq.Message.to_map(msg), pretty: true)
 
     case File.write(path, json) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, reason} ->
         Logger.warning("[Store] Failed to persist #{msg.id} to #{path}: #{inspect(reason)}")
         {:error, reason}
@@ -174,8 +176,12 @@ defmodule OpenclawMq.Store do
     path = message_filepath(msg)
 
     case File.rm(path) do
-      :ok -> :ok
-      {:error, :enoent} -> :ok
+      :ok ->
+        :ok
+
+      {:error, :enoent} ->
+        :ok
+
       {:error, reason} ->
         Logger.warning("[Store] Failed to delete #{path}: #{inspect(reason)}")
     end
@@ -192,7 +198,7 @@ defmodule OpenclawMq.Store do
       |> File.ls!()
       |> Enum.filter(fn entry ->
         entry not in [".", "..", ".metadata", "all", "broadcast", "main"] and
-        File.dir?(Path.join(dir, entry))
+          File.dir?(Path.join(dir, entry))
       end)
       |> Enum.flat_map(fn agent_dir_name ->
         agent_path = Path.join(dir, agent_dir_name)

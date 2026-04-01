@@ -212,16 +212,25 @@ defmodule OpenclawMq.Gateway.Dispatcher do
         "Check your inbox: curl http://127.0.0.1:18790/inbox/#{agent_id}?status=unread"
 
     # Use `openclaw agent --agent <id> --message <text>` to wake the agent
-    case System.cmd(openclaw_bin, ["agent", "--agent", agent_id, "--message", notification],
-                stderr_to_stdout: true) do
-      {_output, 0} ->
-        :ok
+    try do
+      case System.cmd(openclaw_bin, ["agent", "--agent", agent_id, "--message", notification],
+             stderr_to_stdout: true
+           ) do
+        {_output, 0} ->
+          :ok
 
-      {output, code} ->
-        Logger.warning(
-          "[Dispatcher] CLI `openclaw agent` failed for #{agent_id} (exit #{code}): " <>
-            String.slice(output, 0, 300)
-        )
+        {output, code} ->
+          Logger.warning(
+            "[Dispatcher] CLI `openclaw agent` failed for #{agent_id} (exit #{code}): " <>
+              String.slice(output, 0, 300)
+          )
+
+          {:error, "exit #{code}"}
+      end
+    rescue
+      e ->
+        Logger.debug("[Dispatcher] CLI not available for #{agent_id}: #{inspect(e)}")
+        {:error, :cli_unavailable}
     end
   end
 end

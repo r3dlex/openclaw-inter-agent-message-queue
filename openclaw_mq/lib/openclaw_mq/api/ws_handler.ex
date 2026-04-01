@@ -1,3 +1,4 @@
+# :nocov: — WebSocket upgrade handler; requires live Cowboy WS connection, not unit-testable
 defmodule OpenclawMq.Api.WsHandler do
   @moduledoc """
   WebSocket handler for real-time push to agents.

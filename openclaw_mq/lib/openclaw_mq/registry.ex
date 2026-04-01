@@ -83,10 +83,11 @@ defmodule OpenclawMq.Registry do
     Phoenix.PubSub.subscribe(OpenclawMq.PubSub, "broadcast")
 
     # Preserve existing metadata if re-registering, merge with new opts
-    existing_meta = case Map.get(state, agent_id) do
-      nil -> %{}
-      old -> Map.get(old, :metadata, %{})
-    end
+    existing_meta =
+      case Map.get(state, agent_id) do
+        nil -> %{}
+        old -> Map.get(old, :metadata, %{})
+      end
 
     metadata = Map.merge(existing_meta, extract_metadata(opts))
 
@@ -125,7 +126,9 @@ defmodule OpenclawMq.Registry do
         persisted_meta = load_persisted_metadata(agent_id)
 
         if persisted_meta != %{} do
-          Logger.info("[Registry] Agent auto-registered via heartbeat with persisted metadata: #{agent_id}")
+          Logger.info(
+            "[Registry] Agent auto-registered via heartbeat with persisted metadata: #{agent_id}"
+          )
         else
           Logger.info("[Registry] Agent auto-registered via heartbeat: #{agent_id}")
         end
@@ -261,7 +264,10 @@ defmodule OpenclawMq.Registry do
         :ok
 
       {:error, reason} ->
-        Logger.warning("[Registry] Failed to persist metadata for #{agent_id}: #{inspect(reason)}")
+        Logger.warning(
+          "[Registry] Failed to persist metadata for #{agent_id}: #{inspect(reason)}"
+        )
+
         {:error, reason}
     end
   end
