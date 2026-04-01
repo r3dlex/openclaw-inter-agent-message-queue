@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="IAMQ logo" width="96" height="96">
+  <img src="assets/banner.svg" alt="openclaw-inter-agent-message-queue" width="600">
 </p>
 
 # OpenClaw Inter-Agent Message Queue
