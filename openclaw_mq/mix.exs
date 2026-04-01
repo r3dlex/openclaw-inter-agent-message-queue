@@ -8,7 +8,16 @@ defmodule OpenclawMq.MixProject do
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      test_coverage: [summary: [threshold: 5]]
+      test_coverage: [
+        summary: [threshold: 90],
+        # WebSocket upgrade handler and gateway WS RPC client require live connections
+        ignore_modules: [
+          OpenclawMq.Api.WsHandler,
+          OpenclawMq.Api.WsRouter,
+          OpenclawMq.Gateway.RpcClient,
+          OpenclawMq.Application
+        ]
+      ]
     ]
   end
 

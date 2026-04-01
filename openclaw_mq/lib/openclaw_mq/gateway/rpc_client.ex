@@ -1,3 +1,4 @@
+# :nocov: — Ephemeral WebSockex client; requires live gateway WS connection, not unit-testable
 defmodule OpenclawMq.Gateway.RpcClient do
   @moduledoc """
   Ephemeral WebSocket client for sending a single RPC message

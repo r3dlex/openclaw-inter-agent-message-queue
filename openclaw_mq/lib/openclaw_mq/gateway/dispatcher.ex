@@ -213,7 +213,8 @@ defmodule OpenclawMq.Gateway.Dispatcher do
 
     # Use `openclaw agent --agent <id> --message <text>` to wake the agent
     case System.cmd(openclaw_bin, ["agent", "--agent", agent_id, "--message", notification],
-                stderr_to_stdout: true) do
+           stderr_to_stdout: true
+         ) do
       {_output, 0} ->
         :ok
 

@@ -12,3 +12,5 @@ config :openclaw_mq,
   agent_ttl_ms: String.to_integer(System.get_env("IAMQ_AGENT_TTL_MS") || "1800000"),
   # How often to check for stale agents
   reap_interval_ms: String.to_integer(System.get_env("IAMQ_REAP_INTERVAL_MS") || "60000")
+
+import_config "#{config_env()}.exs"
