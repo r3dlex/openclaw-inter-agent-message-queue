@@ -54,8 +54,49 @@ mix run --no-halt
 | `/callback` | POST | Register HTTP callback URL for push delivery |
 | `/callback` | DELETE | Remove HTTP callback URL |
 | `ws://:18793/ws` | WS | Real-time push |
+| `/crons` | POST | Register a cron schedule |
+| `/crons` | GET | List cron schedules (filter by agent_id) |
+| `/crons/:id` | GET | Get single cron schedule |
+| `/crons/:id` | PATCH | Enable/disable a cron schedule |
+| `/crons/:id` | DELETE | Delete a cron schedule |
 
 Full API reference: [spec/API.md](spec/API.md)
+
+## Cron Scheduling
+
+The cron subsystem lets agents schedule recurring tasks without managing their own timers. At each matching UTC minute IAMQ delivers a `cron::<name>` message directly to the agent's inbox.
+
+```bash
+# Register a daily cron at 06:30 UTC for an agent
+curl -X POST http://127.0.0.1:18790/crons \
+  -H 'Content-Type: application/json' \
+  -d '{"agent_id": "mail_agent", "name": "tidy_inbox", "expression": "30 6 * * *", "enabled": true}'
+```
+
+Full reference: [spec/CRON.md](spec/CRON.md)
+
+## Sidecar Client
+
+Elixir agents use `IamqSidecar.MqClient` (in the `sidecar/` subdirectory) to interact with the queue without raw HTTP calls.
+
+**Add to `mix.exs`**:
+
+```elixir
+{:iamq_sidecar, path: "../openclaw-inter-agent-message-queue/sidecar"}
+```
+
+**Key functions**:
+
+| Function | Purpose |
+|----------|---------|
+| `register/4` | Register this agent with IAMQ |
+| `send/4` | Send a message to another agent |
+| `poll_inbox/0` | Fetch unread inbox messages |
+| `register_cron/3` | Register a recurring cron schedule |
+| `list_crons/0` | List all cron schedules for this agent |
+| `get_cron/1` | Get a single cron schedule by ID |
+| `update_cron/2` | Enable or disable a cron schedule |
+| `delete_cron/1` | Delete a cron schedule |
 
 ## Architecture
 
@@ -120,6 +161,25 @@ All settings via environment variables. See [.env.example](.env.example).
 | `IAMQ_GATEWAY_RPC_ENABLED` | `false` | Enable gateway WS RPC delivery |
 | `OPENCLAW_GATEWAY_URL` | `ws://127.0.0.1:18789` | Gateway WebSocket URL |
 | `OPENCLAW_GATEWAY_TOKEN` | `""` | Gateway auth token (for RPC) |
+
+## Links
+
+### Agent Ecosystem
+
+| Repository | Description |
+|------------|-------------|
+| [openclaw-agent-claude](https://github.com/r3dlex/openclaw-agent-claude) | Claude AI orchestrator |
+| [openclaw-ai-tempo-agent](https://github.com/r3dlex/openclaw-ai-tempo-agent) | AI usage analytics |
+| [openclaw-gitrepo-agent](https://github.com/r3dlex/openclaw-gitrepo-agent) | Git repo monitoring |
+| [openclaw-health-fitness](https://github.com/r3dlex/openclaw-health-fitness) | Health & fitness tracking |
+| [openclaw-instagram-agent](https://github.com/r3dlex/openclaw-instagram-agent) | Instagram engagement |
+| [openclaw-journalist-agent](https://github.com/r3dlex/openclaw-journalist-agent) | News briefings |
+| [openclaw-librarian-agent](https://github.com/r3dlex/openclaw-librarian-agent) | Document indexing |
+| [openclaw-mail-agent](https://github.com/r3dlex/openclaw-mail-agent) | Email management |
+| [openclaw-main-agent](https://github.com/r3dlex/openclaw-main-agent) | Cross-agent orchestration |
+| [openclaw-podcast-agent](https://github.com/r3dlex/openclaw-podcast-agent) | Podcast production |
+| [openclaw-sysadmin-agent](https://github.com/r3dlex/openclaw-sysadmin-agent) | System administration |
+| [openclaw-workday-agent](https://github.com/r3dlex/openclaw-workday-agent) | Workday HR automation |
 
 ## License
 

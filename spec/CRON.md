@@ -77,5 +77,52 @@ config :openclaw_mq, cron_dets_enabled: true
 
 Set `cron_dets_enabled: false` in test config to keep tests isolated.
 
+## Sidecar Client
+
+Elixir agents use `IamqSidecar.MqClient` to register crons on startup without writing raw HTTP calls.
+
+```elixir
+# In your agent's Application.start/2 or a startup task:
+IamqSidecar.MqClient.register_cron("tidy_inbox", "30 6 * * *", enabled: true)
+```
+
+`register_cron/3` signature:
+
+```elixir
+@spec register_cron(name :: String.t(), expression :: String.t(), opts :: keyword()) ::
+        {:ok, map()} | {:error, term()}
+```
+
+Other cron helpers available via the sidecar:
+
+| Function | Purpose |
+|----------|---------|
+| `list_crons/0` | List all cron schedules for this agent |
+| `get_cron/1` | Get a single schedule by ID |
+| `update_cron/2` | Enable or disable a schedule (`%{enabled: false}`) |
+| `delete_cron/1` | Delete a schedule by ID |
+
+## References
+
+- [spec/API.md](spec/API.md) — Full HTTP reference for all cron endpoints
+- [sidecar/lib/iamq_sidecar/mq_client.ex](../sidecar/lib/iamq_sidecar/mq_client.ex) — Elixir sidecar client source
+
+### Agent repos that use cron scheduling
+
+| Repository | Description |
+|------------|-------------|
+| [openclaw-agent-claude](https://github.com/r3dlex/openclaw-agent-claude) | Claude AI orchestrator |
+| [openclaw-ai-tempo-agent](https://github.com/r3dlex/openclaw-ai-tempo-agent) | AI usage analytics |
+| [openclaw-gitrepo-agent](https://github.com/r3dlex/openclaw-gitrepo-agent) | Git repo monitoring |
+| [openclaw-health-fitness](https://github.com/r3dlex/openclaw-health-fitness) | Health & fitness tracking |
+| [openclaw-instagram-agent](https://github.com/r3dlex/openclaw-instagram-agent) | Instagram engagement |
+| [openclaw-journalist-agent](https://github.com/r3dlex/openclaw-journalist-agent) | News briefings |
+| [openclaw-librarian-agent](https://github.com/r3dlex/openclaw-librarian-agent) | Document indexing |
+| [openclaw-mail-agent](https://github.com/r3dlex/openclaw-mail-agent) | Email management |
+| [openclaw-main-agent](https://github.com/r3dlex/openclaw-main-agent) | Cross-agent orchestration |
+| [openclaw-podcast-agent](https://github.com/r3dlex/openclaw-podcast-agent) | Podcast production |
+| [openclaw-sysadmin-agent](https://github.com/r3dlex/openclaw-sysadmin-agent) | System administration |
+| [openclaw-workday-agent](https://github.com/r3dlex/openclaw-workday-agent) | Workday HR automation |
+
 ---
 *Owner: mq_agent*
