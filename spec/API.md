@@ -226,6 +226,96 @@ Update an agent's metadata without re-registering. Merges with existing metadata
 
 ---
 
+## Cron Endpoints
+
+### `POST /crons`
+
+Register a cron schedule for an agent. IAMQ will deliver a `cron::<name>` message to the agent's inbox at each matching UTC time.
+
+**Body**:
+```json
+{
+  "agent_id": "mail_agent",
+  "name": "tidy_inbox",
+  "expression": "30 6 * * *",
+  "enabled": true
+}
+```
+
+Fields: `agent_id` (required), `name` (required), `expression` (required, 5-field UTC cron), `enabled` (optional, default `true`).
+
+**Response** `201`:
+```json
+{
+  "id": "uuid",
+  "agent_id": "mail_agent",
+  "name": "tidy_inbox",
+  "expression": "30 6 * * *",
+  "enabled": true,
+  "created_at": "2026-04-02T06:30:00Z",
+  "last_fired_at": null
+}
+```
+
+**Response** `422` — missing/invalid field:
+```json
+{ "error": "invalid cron expression: \"not a cron\"" }
+```
+
+### `GET /crons`
+
+List all registered cron schedules, optionally filtered by agent.
+
+**Query params**: `?agent_id=mail_agent` (optional)
+
+**Response** `200`:
+```json
+{ "crons": [ { "id": "...", ... } ] }
+```
+
+### `GET /crons/:id`
+
+Get a single cron schedule by ID.
+
+**Response** `200`: cron entry JSON.
+
+**Response** `404`:
+```json
+{ "error": "cron not found" }
+```
+
+### `PATCH /crons/:id`
+
+Update a cron schedule (enable or disable).
+
+**Body**:
+```json
+{ "enabled": false }
+```
+
+**Response** `200`: updated cron entry JSON.
+
+**Response** `404`:
+```json
+{ "error": "cron not found" }
+```
+
+### `DELETE /crons/:id`
+
+Delete a cron schedule.
+
+**Response** `200`:
+```json
+{ "status": "deleted" }
+```
+
+**Response** `404`:
+```json
+{ "error": "cron not found" }
+```
+
+---
+
 ## WebSocket Protocol
 
 Connect to `ws://127.0.0.1:18793/ws`.

@@ -11,6 +11,10 @@ config :openclaw_mq,
   # How long before an unregistered agent is considered dead
   agent_ttl_ms: String.to_integer(System.get_env("IAMQ_AGENT_TTL_MS") || "1800000"),
   # How often to check for stale agents
-  reap_interval_ms: String.to_integer(System.get_env("IAMQ_REAP_INTERVAL_MS") || "60000")
+  reap_interval_ms: String.to_integer(System.get_env("IAMQ_REAP_INTERVAL_MS") || "60000"),
+  # Path for DETS cron persistence
+  cron_dets_path: System.get_env("IAMQ_CRON_DETS_PATH") || "priv/crons.dets",
+  # Enable/disable DETS persistence for cron entries
+  cron_dets_enabled: System.get_env("IAMQ_CRON_DETS_ENABLED") != "false"
 
 import_config "#{config_env()}.exs"
