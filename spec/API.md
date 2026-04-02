@@ -228,6 +228,8 @@ Update an agent's metadata without re-registering. Merges with existing metadata
 
 ## Cron Endpoints
 
+> Agents typically register their cron schedules on startup via `IamqSidecar.MqClient.register_cron/3` (Elixir) or `POST /crons` directly (Python/other).
+
 ### `POST /crons`
 
 Register a cron schedule for an agent. IAMQ will deliver a `cron::<name>` message to the agent's inbox at each matching UTC time.
