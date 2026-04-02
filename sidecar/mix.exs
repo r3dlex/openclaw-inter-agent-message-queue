@@ -9,7 +9,17 @@ defmodule IamqSidecar.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      test_coverage: [summary: [threshold: 0]]
+      test_coverage: [summary: [threshold: 0]],
+      name: "IamqSidecar",
+      source_url: "https://github.com/r3dlex/openclaw-inter-agent-message-queue",
+      docs: [
+        main: "IamqSidecar.MqClient",
+        extras:
+          (if File.exists?("README.md"), do: ["README.md"], else: []) ++
+            (if File.exists?("spec"), do: Path.wildcard("spec/*.md"), else: []),
+        output: "doc/",
+        formatters: ["html"]
+      ]
     ]
   end
 
@@ -30,7 +40,8 @@ defmodule IamqSidecar.MixProject do
     [
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:websockex, "~> 0.5"}
+      {:websockex, "~> 0.5"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 end
