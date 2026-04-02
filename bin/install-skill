@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# install-skill — distribute the canonical openclaw-env Claude Code skill
+# to all sibling OpenClaw agent repositories.
+#
+# Run from the openclaw-inter-agent-message-queue/ root directory.
+# Requires: sibling repos checked out at ../openclaw-*/
+#
+# Usage:
+#   ./bin/install-skill              # install to all sibling repos
+#   ./bin/install-skill --dry-run    # preview without writing
+#
+set -euo pipefail
+
+SKILL_SRC=".claude/skills/openclaw-env.md"
+WORKSPACE="$(cd .. && pwd)"
+DRY_RUN=false
+
+if [[ "${1:-}" == "--dry-run" ]]; then
+  DRY_RUN=true
+  echo "[dry-run] Would install: $SKILL_SRC"
+fi
+
+if [ ! -f "$SKILL_SRC" ]; then
+  echo "ERROR: $SKILL_SRC not found."
+  echo "Run this script from the openclaw-inter-agent-message-queue/ root directory."
+  exit 1
+fi
+
+echo "openclaw-env skill installer"
+echo "Source: $(pwd)/$SKILL_SRC"
+echo "Workspace: $WORKSPACE"
+echo ""
+
+installed=0
+skipped=0
+
+for dir in "$WORKSPACE"/openclaw-*/; do
+  repo=$(basename "$dir")
+
+  # Skip self
+  if [ "$repo" = "openclaw-inter-agent-message-queue" ]; then
+    continue
+  fi
+
+  # Skip non-directories
+  if [ ! -d "$dir" ]; then
+    continue
+  fi
+
+  dest="$dir/.claude/skills/openclaw-env.md"
+
+  if $DRY_RUN; then
+    echo "  [dry-run] Would write → $dest"
+  else
+    mkdir -p "$dir/.claude/skills"
+    cp "$SKILL_SRC" "$dest"
+    echo "  ✓ $repo"
+    ((installed++)) || true
+  fi
+done
+
+echo ""
+if $DRY_RUN; then
+  echo "Dry run complete. Run without --dry-run to apply."
+else
+  echo "Done. Installed skill to $installed repo(s)."
+  echo ""
+  echo "To commit in each repo:"
+  echo "  cd ../openclaw-<repo>"
+  echo "  git add .claude/skills/openclaw-env.md"
+  echo '  git commit -m "feat: update openclaw-env Claude Code skill"'
+  echo "  git push"
+  echo ""
+  echo "To update: edit .claude/skills/openclaw-env.md then re-run bin/install-skill"
+fi
