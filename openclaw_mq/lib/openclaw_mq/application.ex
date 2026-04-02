@@ -3,8 +3,8 @@ defmodule OpenclawMq.Application do
   OTP Application entry point for OpenclawMq.
 
   Starts the supervision tree, which includes the PubSub backbone, agent registry,
-  message store, HTTP API server, WebSocket server, gateway dispatcher, and the
-  reaper for stale-entry cleanup.
+  message store, HTTP API server, WebSocket server, gateway dispatcher, the
+  reaper for stale-entry cleanup, and the cron scheduler.
   """
 
   use Application
@@ -37,8 +37,8 @@ defmodule OpenclawMq.Application do
       # Reaper: cleans up stale agents and expired messages
       OpenclawMq.Reaper,
 
-      # Cron scheduler: fires registered cron jobs for agents
-      OpenclawMq.Cron.Scheduler
+      # Cron scheduler: fires registered cron expressions as inbox messages
+      {OpenclawMq.Cron.Scheduler, []}
     ]
 
     opts = [strategy: :one_for_one, name: OpenclawMq.Supervisor]

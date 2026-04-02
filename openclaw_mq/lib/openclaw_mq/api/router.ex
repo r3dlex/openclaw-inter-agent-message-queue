@@ -14,7 +14,13 @@ defmodule OpenclawMq.Api.Router do
     GET    /agents              - List all registered agents (with metadata)
     GET    /agents/:agent_id    - Get a single agent's profile
     PUT    /agents/:agent_id    - Update an agent's metadata
+    POST   /crons               - Register a cron schedule
+    GET    /crons               - List cron schedules (optional ?agent_id= filter)
+    GET    /crons/:id           - Get a single cron schedule
+    PATCH  /crons/:id           - Update a cron schedule (enable/disable)
+    DELETE /crons/:id           - Delete a cron schedule
   """
+
   use Plug.Router
 
   plug(Plug.Parsers,
@@ -143,6 +149,72 @@ defmodule OpenclawMq.Api.Router do
 
       {:error, reason} ->
         send_json(conn, 404, %{"error" => reason})
+    end
+  end
+
+  # Register a cron schedule
+  post "/crons" do
+    case OpenclawMq.Cron.Entry.from_params(conn.body_params) do
+      {:ok, entry} ->
+        :ok = OpenclawMq.Cron.Store.put(entry)
+        :ok = OpenclawMq.Cron.Scheduler.add_entry(entry)
+        send_json(conn, 201, OpenclawMq.Cron.Entry.to_map(entry))
+
+      {:error, reason} ->
+        send_json(conn, 422, %{"error" => reason})
+    end
+  end
+
+  # List cron schedules (optional ?agent_id= filter)
+  get "/crons" do
+    entries =
+      case conn.params["agent_id"] do
+        nil -> OpenclawMq.Cron.Store.list()
+        agent_id -> OpenclawMq.Cron.Store.list_for_agent(agent_id)
+      end
+
+    send_json(conn, 200, %{"crons" => Enum.map(entries, &OpenclawMq.Cron.Entry.to_map/1)})
+  end
+
+  # Get a single cron schedule
+  get "/crons/:id" do
+    case OpenclawMq.Cron.Store.get(id) do
+      {:ok, entry} ->
+        send_json(conn, 200, OpenclawMq.Cron.Entry.to_map(entry))
+
+      {:error, :not_found} ->
+        send_json(conn, 404, %{"error" => "cron not found"})
+    end
+  end
+
+  # Update a cron (enable/disable)
+  patch "/crons/:id" do
+    case OpenclawMq.Cron.Store.update(id, conn.body_params) do
+      {:ok, updated} ->
+        if Map.has_key?(conn.body_params, "enabled") do
+          if updated.enabled do
+            OpenclawMq.Cron.Scheduler.enable_entry(updated)
+          else
+            OpenclawMq.Cron.Scheduler.disable_entry(id)
+          end
+        end
+
+        send_json(conn, 200, OpenclawMq.Cron.Entry.to_map(updated))
+
+      {:error, :not_found} ->
+        send_json(conn, 404, %{"error" => "cron not found"})
+    end
+  end
+
+  # Delete a cron schedule
+  delete "/crons/:id" do
+    case OpenclawMq.Cron.Store.delete(id) do
+      :ok ->
+        OpenclawMq.Cron.Scheduler.remove_entry(id)
+        send_json(conn, 200, %{"status" => "deleted"})
+
+      {:error, :not_found} ->
+        send_json(conn, 404, %{"error" => "cron not found"})
     end
   end
 
