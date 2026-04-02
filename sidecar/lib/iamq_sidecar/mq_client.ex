@@ -14,6 +14,17 @@ defmodule IamqSidecar.MqClient do
     IAMQ_AGENT_CAPABILITIES (comma-separated, optional)
     IAMQ_HEARTBEAT_MS      (default 300 000 — 5 min)
     IAMQ_POLL_MS           (default 60 000 — 1 min)
+
+  ## Cron Management
+
+  The following functions manage cron schedules in IAMQ and are called
+  directly (they do **not** go through the GenServer):
+
+    * `register_cron/3` — create a new schedule
+    * `list_crons/1`    — list schedules for an agent
+    * `get_cron/1`      — fetch a schedule by ID
+    * `update_cron/2`   — enable/disable or mutate a schedule
+    * `delete_cron/1`   — remove a schedule
   """
   use GenServer
   require Logger
@@ -27,6 +38,92 @@ defmodule IamqSidecar.MqClient do
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
+  @doc """
+  Register a cron schedule with IAMQ.
+  Returns `{:ok, cron_entry_map}` or `{:error, reason}`.
+
+  ## Parameters
+    - `name`       — logical name for the schedule (used in `cron::name` subject)
+    - `expression` — standard 5-field cron expression (e.g. `"0 8 * * *"`)
+    - `opts`       — optional keyword list
+      - `:enabled`  — boolean, default `true`
+      - `:agent_id` — string, override the configured agent_id
+  """
+  def register_cron(name, expression, opts \\ []) do
+    url = base_url()
+    agent_id = Keyword.get(opts, :agent_id, configured_agent_id())
+    enabled = Keyword.get(opts, :enabled, true)
+
+    payload = %{agent_id: agent_id, name: name, expression: expression, enabled: enabled}
+
+    case req_post("#{url}/crons", payload) do
+      {:ok, %{status: s, body: b}} when s in [200, 201] -> {:ok, b}
+      {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  List all cron schedules registered for this agent (or all if `:agent_id` not provided).
+  Returns `{:ok, [cron_entry_map]}` or `{:error, reason}`.
+
+  ## Options
+    - `:agent_id` — string, override the configured agent_id
+  """
+  def list_crons(opts \\ []) do
+    url = base_url()
+    agent_id = Keyword.get(opts, :agent_id, configured_agent_id())
+
+    case req_get("#{url}/crons", params: [agent_id: agent_id]) do
+      {:ok, %{status: 200, body: b}} when is_list(b) -> {:ok, b}
+      {:ok, %{status: 200, body: b}} -> {:ok, b}
+      {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Get a single cron schedule by ID.
+  Returns `{:ok, cron_entry_map}` or `{:error, reason}`.
+  """
+  def get_cron(cron_id) do
+    url = base_url()
+
+    case req_get("#{url}/crons/#{cron_id}") do
+      {:ok, %{status: 200, body: b}} -> {:ok, b}
+      {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Enable or disable a cron schedule.
+  Returns `{:ok, updated_cron_map}` or `{:error, reason}`.
+  """
+  def update_cron(cron_id, attrs) do
+    url = base_url()
+
+    case req_patch("#{url}/crons/#{cron_id}", attrs) do
+      {:ok, %{status: s, body: b}} when s in [200, 201] -> {:ok, b}
+      {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Delete a cron schedule.
+  Returns `:ok` or `{:error, reason}`.
+  """
+  def delete_cron(cron_id) do
+    url = base_url()
+
+    case req_delete("#{url}/crons/#{cron_id}") do
+      {:ok, %{status: s}} when s in [200, 204] -> :ok
+      {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   def send_message(to, subject, body, opts \\ []),
     do: GenServer.call(__MODULE__, {:send, to, subject, body, opts})
 
@@ -34,7 +131,10 @@ defmodule IamqSidecar.MqClient do
     do: send_message("broadcast", subject, body, opts)
 
   def inbox(status \\ "unread"), do: GenServer.call(__MODULE__, {:inbox, status})
-  def ack(message_id, status \\ "read"), do: GenServer.call(__MODULE__, {:ack, message_id, status})
+
+  def ack(message_id, status \\ "read"),
+    do: GenServer.call(__MODULE__, {:ack, message_id, status})
+
   def agents, do: GenServer.call(__MODULE__, :agents)
   def status, do: GenServer.call(__MODULE__, :status)
 
@@ -112,7 +212,9 @@ defmodule IamqSidecar.MqClient do
   def handle_call({:send, to, subject, body, opts}, _from, state),
     do: {:reply, do_send(state.config, to, subject, body, opts), state}
 
-  def handle_call({:inbox, st}, _from, state), do: {:reply, do_poll_inbox(state.config, st), state}
+  def handle_call({:inbox, st}, _from, state),
+    do: {:reply, do_poll_inbox(state.config, st), state}
+
   def handle_call({:ack, id, st}, _from, state), do: {:reply, do_ack(state.config, id, st), state}
   def handle_call(:agents, _from, state), do: {:reply, do_get(state.config, "/agents"), state}
   def handle_call(:status, _from, state), do: {:reply, do_get(state.config, "/status"), state}
@@ -137,7 +239,10 @@ defmodule IamqSidecar.MqClient do
   end
 
   defp do_heartbeat(c) do
-    case Req.post("#{c.url}/heartbeat", json: %{agent_id: c.agent_id}, receive_timeout: @http_timeout) do
+    case Req.post("#{c.url}/heartbeat",
+           json: %{agent_id: c.agent_id},
+           receive_timeout: @http_timeout
+         ) do
       {:ok, %{status: s}} when s in [200, 201] -> :ok
       {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
       {:error, reason} -> {:error, reason}
@@ -145,7 +250,10 @@ defmodule IamqSidecar.MqClient do
   end
 
   defp do_poll_inbox(c, status \\ "unread") do
-    case Req.get("#{c.url}/inbox/#{c.agent_id}", params: [status: status], receive_timeout: @http_timeout) do
+    case Req.get("#{c.url}/inbox/#{c.agent_id}",
+           params: [status: status],
+           receive_timeout: @http_timeout
+         ) do
       {:ok, %{status: 200, body: %{"messages" => msgs}}} -> {:ok, msgs}
       {:ok, %{status: 200, body: b}} when is_list(b) -> {:ok, b}
       {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
@@ -155,10 +263,12 @@ defmodule IamqSidecar.MqClient do
 
   defp do_send(c, to, subject, body, opts) do
     payload = %{
-      from: c.agent_id, to: to,
+      from: c.agent_id,
+      to: to,
       type: Keyword.get(opts, :type, "info"),
       priority: Keyword.get(opts, :priority, "NORMAL"),
-      subject: subject, body: body,
+      subject: subject,
+      body: body,
       replyTo: Keyword.get(opts, :reply_to),
       expiresAt: Keyword.get(opts, :expires_at)
     }
@@ -171,7 +281,10 @@ defmodule IamqSidecar.MqClient do
   end
 
   defp do_ack(c, message_id, new_status) do
-    case Req.patch("#{c.url}/messages/#{message_id}", json: %{status: new_status}, receive_timeout: @http_timeout) do
+    case Req.patch("#{c.url}/messages/#{message_id}",
+           json: %{status: new_status},
+           receive_timeout: @http_timeout
+         ) do
       {:ok, %{status: s}} when s in [200, 204] -> :ok
       {:ok, %{status: s, body: b}} -> {:error, "HTTP #{s}: #{inspect(b)}"}
       {:error, reason} -> {:error, reason}
@@ -202,7 +315,41 @@ defmodule IamqSidecar.MqClient do
 
   defp schedule(msg, ms), do: Process.send_after(self(), msg, ms)
   defp parse_int(nil, d), do: d
-  defp parse_int(s, d), do: (case Integer.parse(s) do {v, _} -> v; :error -> d end)
+
+  defp parse_int(s, d),
+    do:
+      (case Integer.parse(s) do
+         {v, _} -> v
+         :error -> d
+       end)
+
   defp parse_caps(""), do: []
-  defp parse_caps(s), do: s |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+
+  defp parse_caps(s),
+    do: s |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+
+  # --- cron HTTP helpers ---
+
+  defp base_url, do: System.get_env("IAMQ_HTTP_URL", @default_url)
+
+  defp configured_agent_id, do: System.get_env("IAMQ_AGENT_ID", "")
+
+  # Extra Req options injected at test time (e.g. adapter: mock_fn).
+  defp extra_req_opts, do: Application.get_env(:iamq_sidecar, :req_options, [])
+
+  defp req_post(url, payload) do
+    Req.post([url: url, json: payload, receive_timeout: @http_timeout] ++ extra_req_opts())
+  end
+
+  defp req_get(url, opts \\ []) do
+    Req.get([url: url, receive_timeout: @http_timeout] ++ opts ++ extra_req_opts())
+  end
+
+  defp req_patch(url, payload) do
+    Req.patch([url: url, json: payload, receive_timeout: @http_timeout] ++ extra_req_opts())
+  end
+
+  defp req_delete(url) do
+    Req.delete([url: url, receive_timeout: @http_timeout] ++ extra_req_opts())
+  end
 end

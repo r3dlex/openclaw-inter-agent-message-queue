@@ -83,7 +83,10 @@ defmodule IamqSidecar.MqWsClient do
 
   @impl true
   def handle_disconnect(%{reason: reason}, state) do
-    Logger.warning("[MQ-WS] Disconnected: #{inspect(reason)}. Reconnecting in #{div(@reconnect_interval, 1000)} s\u2026")
+    Logger.warning(
+      "[MQ-WS] Disconnected: #{inspect(reason)}. Reconnecting in #{div(@reconnect_interval, 1000)} s\u2026"
+    )
+
     Process.sleep(@reconnect_interval)
     {:reconnect, state}
   end
