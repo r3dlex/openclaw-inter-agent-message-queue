@@ -9,8 +9,12 @@ erl_crash.dump
 *.beam
 *.secret.exs
 .elixir_ls/
+.lexical/
 .mix/
 mix.lock.bak
+priv/plts/
+*.plt
+*.plt.hash
 # Hex package manager
 /tmp/hex-*
 
