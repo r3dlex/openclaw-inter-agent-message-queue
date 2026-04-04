@@ -75,3 +75,4 @@ memory/
 USER.md
 BOOTSTRAP.md
 STATUS.json
+priv/crons.dets
