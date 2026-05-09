@@ -5,7 +5,7 @@ config :openclaw_mq,
   ws_port: String.to_integer(System.get_env("IAMQ_WS_PORT") || "18793"),
   gateway_url: System.get_env("OPENCLAW_GATEWAY_URL") || "ws://127.0.0.1:18789",
   gateway_token: System.get_env("OPENCLAW_GATEWAY_TOKEN") || "",
-  gateway_rpc_enabled: System.get_env("IAMQ_GATEWAY_RPC_ENABLED") == "true",
+  gateway_rpc_enabled: System.get_env("IAMQ_GATEWAY_RPC_ENABLED") != "false",
   # Directory for file-based message persistence (relative to project root)
   queue_dir: System.get_env("IAMQ_QUEUE_DIR") || Path.expand("../../queue", __DIR__),
   # How long before an unregistered agent is considered dead

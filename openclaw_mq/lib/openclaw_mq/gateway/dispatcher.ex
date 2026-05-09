@@ -9,8 +9,7 @@ defmodule OpenclawMq.Gateway.Dispatcher do
   3. **Passive inbox** — The message sits in the ETS store. The agent picks it up
      on its next heartbeat poll of `GET /inbox/:agent_id?status=unread`.
 
-  Gateway WS RPC (port 18789) is available but disabled by default due to
-  protocol mismatch (challenge-response handshake not yet implemented).
+  Gateway WS RPC (port 18789) is available but disabled by default.
   Enable with `IAMQ_GATEWAY_RPC_ENABLED=true`.
   """
   use GenServer
@@ -42,6 +41,40 @@ defmodule OpenclawMq.Gateway.Dispatcher do
   @doc "Deliver a message to an agent. Tries HTTP callback, then gateway RPC if enabled."
   def deliver(agent_id, %OpenclawMq.Message{} = msg) do
     GenServer.cast(__MODULE__, {:deliver, agent_id, msg})
+  end
+
+  @doc "Send a Telegram message directly via gateway RPC. Returns :ok or {:error, reason}."
+  def send_telegram(message, account \\ "main") do
+    gateway_url = Application.get_env(:openclaw_mq, :gateway_url)
+    gateway_token = Application.get_env(:openclaw_mq, :gateway_token)
+
+    if is_nil(gateway_url) or gateway_url == "" or is_nil(gateway_token) or gateway_token == "" do
+      {:error, :gateway_not_configured}
+    else
+      delivery_payload = %{
+        account: account,
+        channel: "telegram",
+        content: message,
+        deliver: true
+      }
+
+      case OpenclawMq.Gateway.RpcClient.start_link(
+             {"#{gateway_url}/ws", gateway_token, delivery_payload, self()}
+           ) do
+        {:ok, pid} ->
+          receive do
+            {:rpc_result, :ok} -> :ok
+            {:rpc_result, {:error, reason}} -> {:error, reason}
+          after
+            10_000 ->
+              Process.exit(pid, :kill)
+              {:error, "gateway RPC timeout"}
+          end
+
+        {:error, reason} ->
+          {:error, inspect(reason)}
+      end
+    end
   end
 
   # Server
@@ -134,8 +167,14 @@ defmodule OpenclawMq.Gateway.Dispatcher do
 
   # --- Tier 3: Gateway WS RPC (optional, disabled by default) ---
 
+  defp gateway_configured? do
+    url = Application.get_env(:openclaw_mq, :gateway_url)
+    tok = Application.get_env(:openclaw_mq, :gateway_token)
+    !is_nil(url) and url != "" and !is_nil(tok) and tok != ""
+  end
+
   defp maybe_try_gateway_rpc(agent_id, msg) do
-    if Application.get_env(:openclaw_mq, :gateway_rpc_enabled, false) do
+    if gateway_configured?() do
       case try_gateway_rpc(agent_id, msg) do
         :ok ->
           Logger.info("[Dispatcher] Delivered to #{agent_id} via gateway RPC")
@@ -149,7 +188,7 @@ defmodule OpenclawMq.Gateway.Dispatcher do
           try_cli_fallback(agent_id, msg)
       end
     else
-      Logger.debug("[Dispatcher] No callback for #{agent_id}; trying CLI fallback.")
+      Logger.debug("[Dispatcher] Gateway RPC enabled but not configured; skipping to CLI.")
       try_cli_fallback(agent_id, msg)
     end
   end
@@ -171,28 +210,25 @@ defmodule OpenclawMq.Gateway.Dispatcher do
     gateway_url = Application.get_env(:openclaw_mq, :gateway_url)
     gateway_token = Application.get_env(:openclaw_mq, :gateway_token)
 
-    payload =
-      Jason.encode!(%{
-        "type" => "agent.message",
-        "agentId" => agent_id,
-        "message" => %{
-          "text" =>
-            "[MQ] New message from #{msg.from}: #{msg.subject}\n\n" <>
-              "Check your inbox at http://127.0.0.1:18790/inbox/#{agent_id}?status=unread"
-        },
-        "auth" => %{"token" => gateway_token}
-      })
+    # Build delivery payload — RpcClient will wrap in gateway.send RPC after auth
+    delivery_payload = %{
+      account: agent_id,
+      channel: "telegram",
+      content:
+        "[MQ] New message from #{msg.from}: #{msg.subject}\n\n" <>
+          "Check your inbox at http://127.0.0.1:18790/inbox/#{agent_id}?status=unread",
+      deliver: true
+    }
 
-    case WebSockex.start("#{gateway_url}/ws", OpenclawMq.Gateway.RpcClient, %{
-           payload: payload,
-           caller: self()
-         }) do
+    case OpenclawMq.Gateway.RpcClient.start_link(
+           {"#{gateway_url}/ws", gateway_token, delivery_payload, self()}
+         ) do
       {:ok, pid} ->
         receive do
           {:rpc_result, :ok} -> :ok
           {:rpc_result, {:error, reason}} -> {:error, reason}
         after
-          5_000 ->
+          10_000 ->
             Process.exit(pid, :kill)
             {:error, "gateway RPC timeout"}
         end
@@ -206,15 +242,23 @@ defmodule OpenclawMq.Gateway.Dispatcher do
 
   defp try_cli(agent_id, msg) do
     openclaw_bin = Application.get_env(:openclaw_mq, :openclaw_bin, "openclaw")
+    gateway_url = Application.get_env(:openclaw_mq, :gateway_url, "ws://127.0.0.1:18789")
+    gateway_token = Application.get_env(:openclaw_mq, :gateway_token, "")
 
     notification =
       "[MQ] New message from #{msg.from} (#{msg.priority}): #{msg.subject}. " <>
         "Check your inbox: curl http://127.0.0.1:18790/inbox/#{agent_id}?status=unread"
 
+    # Pass correct gateway URL and token for the CLI inside Docker
+    env = [
+      {"OPENCLAW_GATEWAY_URL", gateway_url},
+      {"OPENCLAW_GATEWAY_TOKEN", gateway_token}
+    ]
+
     # Use `openclaw agent --agent <id> --message <text>` to wake the agent
     try do
       case System.cmd(openclaw_bin, ["agent", "--agent", agent_id, "--message", notification],
-             stderr_to_stdout: true
+             stderr_to_stdout: true, env: env
            ) do
         {_output, 0} ->
           :ok

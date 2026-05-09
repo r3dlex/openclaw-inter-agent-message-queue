@@ -1,0 +1,10 @@
+{
+  "active": true,
+  "started_at": "2026-04-18T21:51:41.665Z",
+  "original_prompt": "/ultrawork \"Rebuild dockers a snecessary and ensure docker images are running\"",
+  "session_id": "7fc42007-38d8-48b2-ae76-4cd68f4e9532",
+  "project_path": "/Volumes/Cowboy_Alpha/Ws/Openclaw/openclaw-inter-agent-message-queue/openclaw_mq",
+  "reinforcement_count": 0,
+  "awaiting_confirmation": true,
+  "last_checked_at": "2026-04-18T21:51:41.668Z"
+}

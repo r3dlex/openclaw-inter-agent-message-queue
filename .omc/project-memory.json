@@ -1,0 +1,337 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775959700384,
+  "projectRoot": "/Volumes/Cowboy_Alpha/Ws/Openclaw/openclaw-inter-agent-message-queue",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": "^3.11",
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "make test",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets",
+      "bin",
+      "scripts",
+      "spec"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 6,
+      "lastAccessed": 1775959700373,
+      "keyFiles": [
+        "banner.svg",
+        "favicon.svg",
+        "github-avatar.svg",
+        "logo-dark.svg",
+        "logo-light.svg"
+      ]
+    },
+    "bin": {
+      "path": "bin",
+      "purpose": "Executable scripts",
+      "fileCount": 1,
+      "lastAccessed": 1775959700373,
+      "keyFiles": [
+        "install-skill"
+      ]
+    },
+    "openclaw_mq": {
+      "path": "openclaw_mq",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1775959700373,
+      "keyFiles": [
+        "README.md",
+        "com.openclaw.mq.plist.example",
+        "erl_crash.dump",
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    "queue": {
+      "path": "queue",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775959700373,
+      "keyFiles": []
+    },
+    "rejected": {
+      "path": "rejected",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775959700373,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1775959700374,
+      "keyFiles": [
+        "entrypoint.sh"
+      ]
+    },
+    "sidecar": {
+      "path": "sidecar",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1775959700374,
+      "keyFiles": [
+        "Dockerfile",
+        "erl_crash.dump",
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    "skills": {
+      "path": "skills",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1775959700374,
+      "keyFiles": [
+        "queue_health_check.json",
+        "queue_health_check.md",
+        "queue_health_check.sh"
+      ]
+    },
+    "spec": {
+      "path": "spec",
+      "purpose": "Test specifications",
+      "fileCount": 8,
+      "lastAccessed": 1775959700374,
+      "keyFiles": [
+        "API.md",
+        "ARCHITECTURE.md",
+        "CRON.md",
+        "LEARNINGS.md",
+        "PIPELINES.md"
+      ]
+    },
+    "tools": {
+      "path": "tools",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775959700374,
+      "keyFiles": [
+        "__init__.py"
+      ]
+    },
+    "openclaw_mq/config": {
+      "path": "openclaw_mq/config",
+      "purpose": "Configuration files",
+      "fileCount": 4,
+      "lastAccessed": 1775959700375,
+      "keyFiles": [
+        "config.exs",
+        "dev.exs",
+        "prod.exs"
+      ]
+    },
+    "sidecar/lib": {
+      "path": "sidecar/lib",
+      "purpose": "Library code",
+      "fileCount": 0,
+      "lastAccessed": 1775959700375,
+      "keyFiles": []
+    },
+    "sidecar/test": {
+      "path": "sidecar/test",
+      "purpose": "Test files",
+      "fileCount": 3,
+      "lastAccessed": 1775959700375,
+      "keyFiles": [
+        "iamq_sidecar_cron_test.exs",
+        "iamq_sidecar_test.exs",
+        "test_helper.exs"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/gateway/rpc_client.ex",
+      "accessCount": 27,
+      "lastAccessed": 1775973031895,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/gateway/dispatcher.ex",
+      "accessCount": 15,
+      "lastAccessed": 1775974264853,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/config/config.exs",
+      "accessCount": 12,
+      "lastAccessed": 1775971038462,
+      "type": "file"
+    },
+    {
+      "path": "Dockerfile",
+      "accessCount": 11,
+      "lastAccessed": 1775972207123,
+      "type": "file"
+    },
+    {
+      "path": ".env",
+      "accessCount": 8,
+      "lastAccessed": 1775963806939,
+      "type": "file"
+    },
+    {
+      "path": ".env.example",
+      "accessCount": 8,
+      "lastAccessed": 1775970089325,
+      "type": "file"
+    },
+    {
+      "path": "docker-compose.yml",
+      "accessCount": 8,
+      "lastAccessed": 1776439713967,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq",
+      "accessCount": 6,
+      "lastAccessed": 1775760516306,
+      "type": "directory"
+    },
+    {
+      "path": "openclaw_mq/config/prod.exs",
+      "accessCount": 4,
+      "lastAccessed": 1775971374286,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/mix.exs",
+      "accessCount": 3,
+      "lastAccessed": 1775960657064,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/rel/config.exs",
+      "accessCount": 3,
+      "lastAccessed": 1775962187253,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1775757503478,
+      "type": "directory"
+    },
+    {
+      "path": "openclaw_mq/test/openclaw_mq/gateway/dispatcher_test.exs",
+      "accessCount": 2,
+      "lastAccessed": 1775757506927,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/lib",
+      "accessCount": 2,
+      "lastAccessed": 1775760729407,
+      "type": "directory"
+    },
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/api/router.ex",
+      "accessCount": 2,
+      "lastAccessed": 1775961381608,
+      "type": "directory"
+    },
+    {
+      "path": "scripts/entrypoint.sh",
+      "accessCount": 2,
+      "lastAccessed": 1775962390845,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/application.ex",
+      "accessCount": 2,
+      "lastAccessed": 1775965759655,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/config/dev.exs",
+      "accessCount": 2,
+      "lastAccessed": 1775971361494,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/gateway",
+      "accessCount": 1,
+      "lastAccessed": 1775757507449,
+      "type": "directory"
+    },
+    {
+      "path": "queue/main/2026-04-08T21-18-34.344679Z-mail_agent.json",
+      "accessCount": 1,
+      "lastAccessed": 1775760643491,
+      "type": "file"
+    },
+    {
+      "path": "queue/main/2026-04-09T00-20-37.314019Z-mq_agent.json",
+      "accessCount": 1,
+      "lastAccessed": 1775760643544,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/api/ws_handler.ex",
+      "accessCount": 1,
+      "lastAccessed": 1775968824852,
+      "type": "file"
+    },
+    {
+      "path": "openclaw_mq/lib/openclaw_mq/api/ws_router.ex",
+      "accessCount": 1,
+      "lastAccessed": 1775968824994,
+      "type": "file"
+    },
+    {
+      "path": "sidecar/Dockerfile",
+      "accessCount": 1,
+      "lastAccessed": 1775970231664,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

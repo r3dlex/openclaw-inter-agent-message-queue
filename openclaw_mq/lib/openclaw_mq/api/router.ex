@@ -72,6 +72,20 @@ defmodule OpenclawMq.Api.Router do
     end
   end
 
+  # Send a Telegram message via the gateway RPC (for agent-to-user relay)
+  post "/send-to-telegram" do
+    %{"message" => message, "account" => account} = conn.body_params
+    account = account || "main"
+
+    case OpenclawMq.Gateway.Dispatcher.send_telegram(message, account) do
+      :ok ->
+        send_json(conn, 200, %{"status" => "sent"})
+
+      {:error, reason} ->
+        send_json(conn, 502, %{"error" => reason})
+    end
+  end
+
   # Get inbox for an agent
   get "/inbox/:agent_id" do
     status_filter = conn.params["status"]

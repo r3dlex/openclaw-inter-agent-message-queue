@@ -8,6 +8,13 @@ defmodule OpenclawMq.MixProject do
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      releases: [
+        openclaw_mq: [
+          include_executables_for: [:unix],
+          config_target: :prod,
+          runtime: true
+        ]
+      ],
       name: "OpenclawMq",
       source_url: "https://github.com/r3dlex/openclaw-inter-agent-message-queue",
       docs: [

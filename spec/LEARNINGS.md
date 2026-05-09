@@ -69,4 +69,139 @@ Operational lessons, post-mortems, and insights captured during development and 
 
 ---
 
+## 2026-04-08 — Corrected Ed25519 device-auth protocol for IAMQ gateway RPC
+
+**What happened**: The previous implementation plan for the IAMQ gateway RPC client contained three critical errors about the OpenClaw gateway protocol.
+
+**Errors in previous plan**:
+
+1. **Wrong algorithm** — Used `secp256r1` / `ecdsa` throughout. OpenClaw uses **Ed25519** via Node.js `crypto.generateKeyPairSync("ed25519")` and `crypto.sign(null, Buffer.from(payload, "utf8"), key)`.
+
+2. **Wrong payload format** — Used `<<nonce :: binary, signedAt :: integer>>` (binary packed struct). OpenClaw's `buildDeviceAuthPayload` produces a **pipe-delimited UTF-8 string**:
+   ```
+   v2|deviceId|clientId|clientMode|role|scopes|signedAtMs|token|nonce
+   v3|deviceId|clientId|clientMode|role|scopes|signedAtMs|token|nonce|platform|deviceFamily
+   ```
+
+3. **Wrong signature encoding** — Used `Base.encode64`. OpenClaw uses **Base64URL** (`Base.url_encode64/1` with `padding: false`, which replaces `+` → `-`, `/` → `_`, strips `=` padding).
+
+**What we corrected**:
+
+### Key Generation — Ed25519
+
+```elixir
+# Generate Ed25519 keypair
+{public_key, private_key} = :crypto.generate_key(:ed25519)
+
+# PEM encode
+public_key_pem = public_key
+  |> :public_key.pem_entry_encode(:'SubjectPublicKeyInfo')
+  |> :public_key.pem_encode()
+
+private_key_pem = private_key
+  |> :public_key.pem_entry_encode(:'PrivateKeyInfo')
+  |> :public_key.pem_encode()
+```
+
+### Device ID — SHA-256 of Raw Public Key Bytes
+
+The device ID is NOT a UUID. It is the SHA-256 hex fingerprint of the raw public key:
+
+```elixir
+[{_, der}] = :public_key.pem_decode(public_key_pem)
+raw_pub = :public_key.der_decode(:'SubjectPublicKeyInfo', der)
+device_id = :crypto.hash(:sha256, raw_pub) |> Base.hex_encode_to_string()
+# 64-char hex string, e.g. "a1b2c3d4...f9e8d7c6"
+```
+
+### Signature Payload — Pipe-Delimited String
+
+```elixir
+# v3 payload
+payload = [
+  "v3",
+  device_id,
+  client_id,       # "openclaw-mq"
+  client_mode,     # "node"
+  role,            # "node"
+  scopes_str,      # "" or "admin,write"
+  Integer.to_string(signed_at_ms),
+  gateway_token,
+  nonce,
+  platform,        # "elixir"
+  device_family    # "null"
+] |> Enum.join("|")
+
+# Sign with Ed25519 → DER → Base64URL
+der_sig = :crypto.sign(:ed25519, payload, private_key)
+signature = Base.url_encode64(der_sig, padding: false)
+```
+
+### Identity File — `~/.openclaw/iamq-device-identity.json`
+
+```json
+{
+  "version": 1,
+  "deviceId": "<sha256-hex-of-raw-public-key>",
+  "createdAtMs": 1744089600000,
+  "privateKeyPem": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+}
+```
+
+### New Module: `OpenclawMq.Gateway.DeviceIdentity`
+
+Create at `openclaw_mq/lib/openclaw_mq/gateway/device_identity.ex`:
+
+- `get_or_create_identity/0` — load from disk or generate new Ed25519 keypair
+- `regenerate_identity/0` — force new keypair (invalidates old device on gateway)
+- Device ID derived as SHA-256 of raw public key bytes
+- Reads identity from `~/.openclaw/iamq-device-identity.json`
+
+### Corrected RpcClient State Machine
+
+States: `:idle → :waiting_challenge → :authenticated → :closing → :done`
+
+1. Connect to gateway WS → server sends `{"type":"event","event":"connect.challenge","payload":{"nonce":"...","ts":...}}`
+2. Client responds with `connect.auth` req containing token, nonce, signed payload
+3. Server sends `connect.success` → client sends the actual RPC req
+4. Receive `res` response → forward to caller → close
+
+### Corrected `connect.req` (v3, recommended)
+
+```json
+{
+  "type": "req", "id": "<uuid>",
+  "method": "connect",
+  "params": {
+    "minProtocol": 3, "maxProtocol": 3,
+    "client": {
+      "id": "openclaw-mq", "version": "1.0.0",
+      "platform": "elixir", "mode": "node", "deviceFamily": null
+    },
+    "role": "node", "scopes": [],
+    "auth": {"token": "<OPENCLAW_GATEWAY_TOKEN>"},
+    "locale": "en-US", "userAgent": "openclaw-mq/1.0.0",
+    "device": {
+      "id": "<sha256-hex-of-public-key>",
+      "publicKey": "<PEM or base64url raw>",
+      "signature": "<base64url(Ed25519.sign(payload)))>",
+      "signedAt": 1744089600000,
+      "nonce": "<nonce from challenge>"
+    }
+  }
+}
+```
+
+### Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `openclaw_mq/lib/openclaw_mq/gateway/device_identity.ex` | **Create** — Ed25519 key generation, device ID, identity persistence |
+| `openclaw_mq/lib/openclaw_mq/gateway/rpc_client.ex` | **Replace** — Full state machine with Ed25519 signing, pipe-delimited payload |
+| `openclaw_mq/lib/openclaw_mq/gateway/dispatcher.ex` | **Update** — Init DeviceIdentity; update gateway RPC payload format |
+| `openclaw_mq/config/config.exs` | **No change** — Already has `gateway_url`, `gateway_token`, `gateway_rpc_enabled` |
+
+---
+
 *Add new entries above this line.*

@@ -7,6 +7,15 @@ WORKDIR /app/openclaw_mq
 
 ENV MIX_ENV=prod
 
+# Env vars for mix release — baked into the built release.
+# docker-compose sets these via ${VAR} substitution.
+ARG OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
+ARG OPENCLAW_GATEWAY_TOKEN=
+ARG IAMQ_GATEWAY_RPC_ENABLED=true
+ENV OPENCLAW_GATEWAY_URL=${OPENCLAW_GATEWAY_URL}
+ENV OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+ENV IAMQ_GATEWAY_RPC_ENABLED=${IAMQ_GATEWAY_RPC_ENABLED}
+
 # Install hex and rebar
 RUN mix local.hex --force && mix local.rebar --force
 
@@ -16,8 +25,9 @@ RUN mix deps.get --only prod && mix deps.compile
 
 # Copy source and build release
 COPY openclaw_mq/config/ config/
+COPY openclaw_mq/rel/ rel/
 COPY openclaw_mq/lib/ lib/
-RUN mix compile && mix release
+RUN mix compile && MIX_ENV=prod mix release
 
 # ── Stage 2: Python tools ────────────────────────────────────────────────────
 FROM python:3.12-slim AS python-tools

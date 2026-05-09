@@ -1,6 +1,6 @@
-.PHONY: help build up down logs test lint check pipelines shell clean deps compile release
+.PHONY: help build up down logs test lint check pipelines shell restart clean deps compile release
 
-COMPOSE := docker compose
+COMPOSE := docker-compose
 MQ_DIR  := openclaw_mq
 
 help: ## Show this help
@@ -23,6 +23,8 @@ logs: ## Tail service logs
 
 shell: ## Open a shell in the service container
 	$(COMPOSE) exec iamq /bin/sh
+
+restart: down up ## Restart services (down + up)
 
 # ── Elixir (local development) ──────────────
 

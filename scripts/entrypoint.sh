@@ -4,6 +4,7 @@ set -e
 case "${1:-serve}" in
   serve)
     echo "Starting OpenClaw MQ (Elixir)..."
+    export RUNTIME_CONFIG=true
     exec /app/release/bin/openclaw_mq start
     ;;
   pipeline)

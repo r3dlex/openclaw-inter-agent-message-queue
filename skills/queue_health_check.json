@@ -1,0 +1,13 @@
+{
+  "name": "queue_health_check",
+  "version": 1,
+  "quality_score": 0.5,
+  "description": "Check IAMQ queue health and delivery statistics",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "check_type": {"type": "string", "description": "Type of health check to run", "default": "full"}
+    },
+    "required": []
+  }
+}

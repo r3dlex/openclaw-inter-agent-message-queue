@@ -60,7 +60,65 @@ If no HTTP callback is registered and gateway RPC is disabled (or fails), the di
 
 ### Gateway WS RPC (optional, disabled by default)
 
-The dispatcher can also attempt to notify agents via the OpenClaw gateway at `:18789` using WebSocket RPC. This is **disabled by default** (`IAMQ_GATEWAY_RPC_ENABLED=false`) because the gateway uses a challenge-response handshake not yet fully implemented. Enable with `IAMQ_GATEWAY_RPC_ENABLED=true` if the gateway protocol is resolved.
+The dispatcher can also attempt to notify agents via the OpenClaw gateway at `:18789` using WebSocket RPC. This is **disabled by default** (`IAMQ_GATEWAY_RPC_ENABLED=false`). Enable with `IAMQ_GATEWAY_RPC_ENABLED=true`.
+
+#### Gateway RPC Protocol
+
+**Connection:** `ws://127.0.0.1:18789/ws`
+
+**State machine (client → gateway):**
+
+```
+idle → waiting_challenge → authenticated → closing → done
+```
+
+**Wire format:**
+
+```
+Gateway → Client (on connect):
+{"type":"event","event":"connect.challenge","payload":{"nonce":"...","ts":1737264000000}}
+
+Client → Gateway (connect.req — type:"req", NOT an event):
+{"type":"req","id":"1","method":"connect","params":{
+  "minProtocol":3,"maxProtocol":3,
+  "client":{"id":"openclaw-mq","version":"1.0.0","platform":"elixir","mode":"node"},
+  "role":"node","scopes":[],
+  "auth":{"token":"<OPENCLAW_GATEWAY_TOKEN>"},
+  "device":{
+    "id":"<device_id>",
+    "nonce":"<nonce from challenge>",
+    "publicKey":"<Base64URL public key>",
+    "signature":"<Base64URL DER signature>",
+    "signedAt":<timestamp_ms>
+  }
+}}
+
+Gateway → Client (auth ack):
+{"type":"res","id":"1","ok":true,"payload":{"type":"hello-ok","protocol":3}}
+
+Client → Gateway (delivery RPC):
+{"type":"req","id":"2","method":"gateway.send","params":{
+  "account":"<agent_id>",
+  "channel":"telegram",
+  "content":"<notification text>",
+  "deliver":true
+}}
+```
+
+**Device identity (Ed25519):**
+- Key generation: `:crypto.generate_key(:eddsa, :ed25519)` → `{public_key, private_key}` (32-byte binaries)
+- DeviceId: SHA-256 of raw public key bytes → 64-char lowercase hex
+  ```elixir
+  device_id = :crypto.hash(:sha256, public_key) |> Base.encode16(case: :lower)
+  ```
+- Signature payload (v3 pipe-delimited):
+  ```
+  v3|deviceId|clientId|clientMode|role|scopes|signedAtMs|token|nonce|platform|deviceFamily
+  ```
+  Example: `"v3|aabbcc...|openclaw-mq|elixir|node|node||1737264000000|<token>|<nonce>|elixir|server"`
+- Signing: `:crypto.sign(:eddsa, :none, payload, [private_key, :ed25519])` → DER signature
+- Signature encoding: `Base.url_encode64(der_sig, padding: false)` → Base64URL (no padding)
+- Key persistence: `~/.openclaw/iamq-device-identity.json` (atomic write: temp file + rename)
 
 ### Delivery Order Summary
 
