@@ -27,20 +27,14 @@ defmodule OpenclawMq.MixProject do
       ],
       test_coverage: [
         summary: [threshold: 90],
-        # WebSocket upgrade handler and gateway WS RPC client require live connections.
-        # Registry, Dispatcher, Store, Reaper, and Router had pre-existing coverage levels
-        # before the cron subsystem feature — they are excluded so the 90% threshold
-        # applies only to the new cron modules (Entry, Store, Scheduler) and supporting code.
+        # WebSocket upgrade handler and gateway WS RPC client require live WebSocket
+        # connections (and in the case of RpcClient, an authenticated gateway server
+        # that we do not run in CI). They are out of scope for unit tests; everything
+        # else is now covered at >= 90% by tests under openclaw_mq/test/.
         ignore_modules: [
           OpenclawMq.Api.WsHandler,
           OpenclawMq.Api.WsRouter,
-          OpenclawMq.Gateway.RpcClient,
-          OpenclawMq.Application,
-          OpenclawMq.Registry,
-          OpenclawMq.Gateway.Dispatcher,
-          OpenclawMq.Store,
-          OpenclawMq.Reaper,
-          OpenclawMq.Api.Router
+          OpenclawMq.Gateway.RpcClient
         ]
       ]
     ]

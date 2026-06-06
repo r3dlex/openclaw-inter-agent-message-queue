@@ -198,6 +198,40 @@ defmodule OpenclawMq.Cron.SchedulerTest do
       assert Scheduler.scheduled?(e1.id)
       assert Scheduler.scheduled?(e2.id)
     end
+
+    test "add_entry with invalid cron expression does not schedule and does not crash" do
+      # Bypass from_params validation by constructing the struct directly
+      entry = %Entry{
+        id: UUID.uuid4(),
+        agent_id: "sched_agent",
+        name: "bad_cron_#{:erlang.unique_integer([:positive])}",
+        expression: "not a valid cron",
+        enabled: true,
+        created_at: DateTime.utc_now(),
+        last_fired_at: nil
+      }
+
+      Store.put(entry)
+      # Should return :ok and not raise, but the entry should NOT be scheduled
+      assert :ok = Scheduler.add_entry(entry)
+      refute Scheduler.scheduled?(entry.id)
+    end
+
+    test "enable_entry with invalid cron expression does not schedule" do
+      entry = %Entry{
+        id: UUID.uuid4(),
+        agent_id: "sched_agent",
+        name: "bad_cron_#{:erlang.unique_integer([:positive])}",
+        expression: "not a valid cron",
+        enabled: true,
+        created_at: DateTime.utc_now(),
+        last_fired_at: nil
+      }
+
+      Store.put(entry)
+      assert :ok = Scheduler.enable_entry(entry)
+      refute Scheduler.scheduled?(entry.id)
+    end
   end
 
   # --- Test doubles ---
