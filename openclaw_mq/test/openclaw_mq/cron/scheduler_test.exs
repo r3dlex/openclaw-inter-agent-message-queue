@@ -210,10 +210,16 @@ defmodule OpenclawMq.Cron.SchedulerTest do
 
     @doc "Reset the recorded messages to an empty list. Starts the agent if needed."
     def reset do
-      if pid = GenServer.whereis(__MODULE__) do
-        Agent.update(pid, fn _ -> [] end)
-      else
-        Agent.start_link(fn -> [] end, name: __MODULE__)
+      case GenServer.whereis(__MODULE__) do
+        nil ->
+          Agent.start_link(fn -> [] end, name: __MODULE__)
+
+        pid ->
+          try do
+            Agent.update(pid, fn _ -> [] end)
+          catch
+            :exit, _ -> Agent.start_link(fn -> [] end, name: __MODULE__)
+          end
       end
     end
 
@@ -235,10 +241,16 @@ defmodule OpenclawMq.Cron.SchedulerTest do
 
     @doc "Reset the recorded calls. Starts the agent if needed."
     def reset do
-      if pid = GenServer.whereis(__MODULE__) do
-        Agent.update(pid, fn _ -> [] end)
-      else
-        Agent.start_link(fn -> [] end, name: __MODULE__)
+      case GenServer.whereis(__MODULE__) do
+        nil ->
+          Agent.start_link(fn -> [] end, name: __MODULE__)
+
+        pid ->
+          try do
+            Agent.update(pid, fn _ -> [] end)
+          catch
+            :exit, _ -> Agent.start_link(fn -> [] end, name: __MODULE__)
+          end
       end
     end
 
