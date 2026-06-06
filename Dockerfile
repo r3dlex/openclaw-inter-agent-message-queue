@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for OpenClaw MQ (Elixir service + Python tools)
 
 # ── Stage 1: Build Elixir release ────────────────────────────────────────────
-FROM elixir:1.15-otp-26-slim AS elixir-build
+FROM elixir:1.15-otp-26-slim@sha256:88149b50cd689d78e17fa84a5f0e68615a0aa1173a7e19352b1a06d2eda3fdd3 AS elixir-build
 
 WORKDIR /app/openclaw_mq
 
@@ -30,7 +30,7 @@ COPY openclaw_mq/lib/ lib/
 RUN mix compile && MIX_ENV=prod mix release
 
 # ── Stage 2: Python tools ────────────────────────────────────────────────────
-FROM python:3.12-slim AS python-tools
+FROM python:3.12-slim@sha256:090ba77e2958f6af52a5341f788b50b032dd4ca28377d2893dcf1ecbdfdfe203 AS python-tools
 
 WORKDIR /tools
 
@@ -44,7 +44,7 @@ RUN poetry install --no-interaction --no-root --only main 2>/dev/null || \
 COPY tools/ tools/
 
 # ── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM debian:bookworm-slim AS runtime
+FROM debian:bookworm-slim@sha256:0104b334637a5f19aa9c983a91b54c89887c0984081f2068983107a6f6c21eeb AS runtime
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
