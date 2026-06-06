@@ -51,3 +51,11 @@ For each pin: `docker pull` + `docker images --digests` to discover the new dige
 | 2026-06-06 | `elixir:1.15-otp-26-slim` | floating tag | `sha256:88149b50cd689d78e17fa84a5f0e68615a0aa1173a7e19352b1a06d2eda3fdd3` | (this PR, initial pin) |
 | 2026-06-06 | `python:3.12-slim` | floating tag | `sha256:090ba77e2958f6af52a5341f788b50b032dd4ca28377d2893dcf1ecbdfdfe203` | (this PR, initial pin) |
 | 2026-06-06 | `debian:bookworm-slim` | floating tag | `sha256:0104b334637a5f19aa9c983a91b54c89887c0984081f2068983107a6f6c21eeb` | (this PR, initial pin) |
+
+## Cross-Repo Coordination
+
+> The authoritative cross-repo pin table for the Openclaw fleet
+> lives in `r3dlex/openclaw-gitrepo-agent/spec/SUPPLY_CHAIN.md` (the
+> "Cross-Repo Coordination" section). This file mirrors that table —
+> do not edit the rows here directly; bump the table in gitrepo and
+> follow up with a mirroring commit in this repo.
