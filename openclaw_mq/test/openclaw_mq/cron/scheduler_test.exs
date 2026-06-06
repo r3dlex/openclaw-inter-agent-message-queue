@@ -198,6 +198,60 @@ defmodule OpenclawMq.Cron.SchedulerTest do
       assert Scheduler.scheduled?(e1.id)
       assert Scheduler.scheduled?(e2.id)
     end
+
+    test "add_entry with invalid cron expression does not schedule and does not crash" do
+      # Bypass from_params validation by constructing the struct directly
+      entry = %Entry{
+        id: UUID.uuid4(),
+        agent_id: "sched_agent",
+        name: "bad_cron_#{:erlang.unique_integer([:positive])}",
+        expression: "not a valid cron",
+        enabled: true,
+        created_at: DateTime.utc_now(),
+        last_fired_at: nil
+      }
+
+      Store.put(entry)
+      # Should return :ok and not raise, but the entry should NOT be scheduled
+      assert :ok = Scheduler.add_entry(entry)
+      refute Scheduler.scheduled?(entry.id)
+    end
+
+    test "enable_entry with invalid cron expression does not schedule" do
+      entry = %Entry{
+        id: UUID.uuid4(),
+        agent_id: "sched_agent",
+        name: "bad_cron_#{:erlang.unique_integer([:positive])}",
+        expression: "not a valid cron",
+        enabled: true,
+        created_at: DateTime.utc_now(),
+        last_fired_at: nil
+      }
+
+      Store.put(entry)
+      assert :ok = Scheduler.enable_entry(entry)
+      refute Scheduler.scheduled?(entry.id)
+    end
+
+    test "firing an entry that has been disabled does not re-schedule it" do
+      entry = make_entry()
+      Store.put(entry)
+      Scheduler.add_entry(entry)
+      assert Scheduler.scheduled?(entry.id)
+
+      scheduler_pid = GenServer.whereis(Scheduler)
+      send(scheduler_pid, {:fire, entry.id})
+      Process.sleep(50)
+
+      # Now disable the entry in the store and re-fire manually
+      disabled_entry = %{entry | enabled: false}
+      Store.put(disabled_entry)
+      send(scheduler_pid, {:fire, entry.id})
+      Process.sleep(50)
+
+      # After firing a disabled entry, the entry must not be re-scheduled
+      refute Scheduler.scheduled?(entry.id)
+    end
   end
 
   # --- Test doubles ---
