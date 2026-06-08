@@ -7,58 +7,148 @@ on:
     branches: [main]
 
 jobs:
-  elixir:
-    name: Elixir (compile + test)
-    runs-on: ubuntu-latest
+  # ==========================================================================
+  # elixir (Elixir (compile + test))
+  # ==========================================================================
+  _elixir-self-hosted:
+    name: "Elixir (compile + test) (self-hosted)"
+    runs-on: [self-hosted, ubuntu-latest]
     defaults:
       run:
         working-directory: openclaw_mq
+    continue-on-error: true
+    outputs:
+      passed: ${{ steps.mark.outputs.passed }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: "1.15"
           otp-version: "26"
-
       - name: Install dependencies
         run: mix deps.get
-
       - name: Compile (warnings as errors)
         run: mix compile --warnings-as-errors
-
       - name: Test
         run: mix test
-
       - name: Generate docs
         run: mix docs
+      - id: mark
+        if: success()
+        working-directory: ${{ github.workspace }}
+        run: echo "passed=true" >> "$GITHUB_OUTPUT"
 
-  python-tools:
-    name: Python tools (lint)
+  elixir:
+    name: Elixir (compile + test)
+    needs: _elixir-self-hosted
+    if: always()
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: openclaw_mq
+    steps:
+      - name: Route
+        working-directory: ${{ github.workspace }}
+        run: echo "self-hosted passed=${{ needs._elixir-self-hosted.outputs.passed }}"
+      - uses: actions/checkout@v4
+        if: needs._elixir-self-hosted.outputs.passed != 'true'
+      - name: Set up Elixir
+        if: needs._elixir-self-hosted.outputs.passed != 'true'
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.15"
+          otp-version: "26"
+      - name: Install dependencies
+        if: needs._elixir-self-hosted.outputs.passed != 'true'
+        run: mix deps.get
+      - name: Compile (warnings as errors)
+        if: needs._elixir-self-hosted.outputs.passed != 'true'
+        run: mix compile --warnings-as-errors
+      - name: Test
+        if: needs._elixir-self-hosted.outputs.passed != 'true'
+        run: mix test
+      - name: Generate docs
+        if: needs._elixir-self-hosted.outputs.passed != 'true'
+        run: mix docs
+
+  # ==========================================================================
+  # python-tools (Python tools (lint))
+  # ==========================================================================
+  _python-tools-self-hosted:
+    name: "Python tools (lint) (self-hosted)"
+    runs-on: [self-hosted, ubuntu-latest]
+    continue-on-error: true
+    outputs:
+      passed: ${{ steps.mark.outputs.passed }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install ruff
         run: pip install ruff
-
       - name: Lint
         run: ruff check tools/
-
       - name: Format check
         run: ruff format --check tools/
+      - id: mark
+        if: success()
+        run: echo "passed=true" >> "$GITHUB_OUTPUT"
+
+  python-tools:
+    name: Python tools (lint)
+    needs: _python-tools-self-hosted
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Route
+        run: echo "self-hosted passed=${{ needs._python-tools-self-hosted.outputs.passed }}"
+      - uses: actions/checkout@v4
+        if: needs._python-tools-self-hosted.outputs.passed != 'true'
+      - name: Set up Python
+        if: needs._python-tools-self-hosted.outputs.passed != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        if: needs._python-tools-self-hosted.outputs.passed != 'true'
+        run: pip install ruff
+      - name: Lint
+        if: needs._python-tools-self-hosted.outputs.passed != 'true'
+        run: ruff check tools/
+      - name: Format check
+        if: needs._python-tools-self-hosted.outputs.passed != 'true'
+        run: ruff format --check tools/
+
+  # ==========================================================================
+  # docker-build (Docker build)
+  # ==========================================================================
+  _docker-build-self-hosted:
+    name: "Docker build (self-hosted)"
+    runs-on: [self-hosted, ubuntu-latest]
+    continue-on-error: true
+    outputs:
+      passed: ${{ steps.mark.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t openclaw-iamq:test .
+      - id: mark
+        if: success()
+        run: echo "passed=true" >> "$GITHUB_OUTPUT"
 
   docker-build:
     name: Docker build
+    needs: _docker-build-self-hosted
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Route
+        run: echo "self-hosted passed=${{ needs._docker-build-self-hosted.outputs.passed }}"
       - uses: actions/checkout@v4
-
+        if: needs._docker-build-self-hosted.outputs.passed != 'true'
       - name: Build Docker image
+        if: needs._docker-build-self-hosted.outputs.passed != 'true'
         run: docker build -t openclaw-iamq:test .
